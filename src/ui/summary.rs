@@ -204,8 +204,10 @@ fn scene_branch(tick: usize) -> Vec<Line<'static>> {
     ];
 
     if show_branch {
-        let branch_arm = "─── ●".repeat(1);
-        let partial = &branch_arm[..((branch_len * 5) / 4).min(branch_arm.len())];
+        let branch_arm = "─── ●";
+        // Slice by char count, not bytes — '─' is 3 bytes so byte-indexing panics.
+        let reveal_chars = ((branch_len * 2)).min(branch_arm.chars().count());
+        let partial: String = branch_arm.chars().take(reveal_chars).collect();
         lines.push(Line::from(Span::styled("              \\", Style::default().fg(Color::Rgb(240, 200, 40)))));
         lines.push(Line::from(Span::styled(
             format!("               {partial}"),
