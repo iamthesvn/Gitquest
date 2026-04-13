@@ -1,0 +1,29 @@
+[package]
+name = "gitquest"
+version = "0.1.0"
+edition = "2021"
+description = "A terminal game that teaches Git through interactive levels"
+license = "MIT"
+keywords = ["game", "git", "tui", "terminal", "education"]
+categories = ["games", "command-line-utilities"]
+readme = "README.md"
+
+[[bin]]
+name = "gitquest"
+path = "src/main.rs"
+
+[dependencies]
+ratatui = "0.30"
+crossterm = "0.29"
+rodio = { version = "0.19", default-features = false, features = ["wav"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "6"
+
+[features]
+default = ["audio"]
+audio = []
+
+[profile.release]
+opt-level = 3
+strip = true
