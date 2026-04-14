@@ -1,37 +1,56 @@
-pub mod hud;
+// ui/mod.rs — GitQuest render dispatcher.
+
+pub mod chapter;
 pub mod menu;
-pub mod summary;
 pub mod transition;
 
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    layout::{Alignment, Constraint, Direction, Layout},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
 
-use crate::{app::{App, AppState}, story};
+use crate::app::{App, AppState};
+
+const ACCENT: Color = Color::Rgb(255, 120, 40);
+const BG: Color = Color::Rgb(10, 10, 18);
 
 pub fn draw(frame: &mut Frame, app: &App) {
     match &app.state {
         AppState::Menu { selected } => {
             menu::draw_menu(frame, frame.area(), *selected);
         }
-        AppState::LevelIntro { level } => {
-            draw_level_intro(frame, app, *level);
+        AppState::VolumeSelect { selected } => {
+            draw_volume_select(frame, app, *selected);
         }
-        AppState::Playing { level } => {
-            draw_playing(frame, app, *level);
+        AppState::ChapterIntro { vol_idx, ch_idx } => {
+            draw_chapter_intro(frame, app, *vol_idx, *ch_idx);
         }
-        AppState::LevelComplete { level, score } => {
-            summary::draw_level_complete(frame, app, *level, *score, app.anim_tick);
+        AppState::Playing { vol_idx, ch_idx } => {
+            if let Some(ch) = app.current_chapter(*vol_idx, *ch_idx) {
+                chapter::draw_chapter(
+                    frame,
+                    vol_idx + 1,
+                    ch_idx + 1,
+                    ch,
+                    &app.chapter_state,
+                );
+            }
         }
-        AppState::Transition { next_level, frame: anim_frame } => {
-            transition::draw_transition(frame, *next_level, *anim_frame);
+        AppState::ChapterComplete { vol_idx, ch_idx, earned_xp, anim_tick } => {
+            draw_chapter_complete(frame, app, *vol_idx, *ch_idx, *earned_xp, *anim_tick);
         }
-        AppState::GameComplete { total_score } => {
-            summary::draw_game_complete(frame, app, *total_score);
+        AppState::Transition { next_vol, next_ch, frame: anim_frame } => {
+            transition::draw_transition(frame, *next_vol, *anim_frame);
+            let _ = next_ch;
+        }
+        AppState::VolumeComplete { vol_idx } => {
+            draw_volume_complete(frame, app, *vol_idx);
+        }
+        AppState::GameComplete => {
+            draw_game_complete(frame, app);
         }
         AppState::Quit => {}
     }
@@ -39,175 +58,357 @@ pub fn draw(frame: &mut Frame, app: &App) {
 
 pub fn draw_resize_warning(frame: &mut Frame) {
     let area = frame.area();
-    let warning = Paragraph::new(vec![
+    let p = Paragraph::new(vec![
         Line::from(""),
-        Line::from(Span::styled(
-            "  ⚠  Terminal too small!",
-            Style::default().fg(Color::Yellow),
-        )),
+        Line::from(Span::styled("  ⚠  Terminal too small!", Style::default().fg(Color::Yellow))),
         Line::from(""),
-        Line::from(Span::styled(
-            "  GitQuest needs at least 80×24.",
-            Style::default().fg(Color::Rgb(180, 180, 180)),
-        )),
-        Line::from(Span::styled(
-            "  Please resize your terminal window.",
-            Style::default().fg(Color::DarkGray),
-        )),
+        Line::from(Span::styled("  GitQuest needs at least 80 × 24.", Style::default().fg(Color::Rgb(180, 180, 180)))),
+        Line::from(Span::styled("  Please resize your terminal window.", Style::default().fg(Color::DarkGray))),
     ])
     .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow)));
-    frame.render_widget(warning, area);
+    frame.render_widget(p, area);
 }
 
-fn draw_level_intro(frame: &mut Frame, app: &App, level: usize) {
+// ── Volume select ─────────────────────────────────────────────────────────────
+
+fn draw_volume_select(frame: &mut Frame, app: &App, selected: usize) {
     let area = frame.area();
-
-    let story = story::LEVEL_STORIES.get(level);
-
-    // Two-panel layout: left = ASCII art scene, right = story text
-    let panels = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(28), Constraint::Min(40)])
-        .split(area);
-
-    // Left panel: ASCII art illustration
-    let art = story::LEVEL_ART.get(level).copied().unwrap_or(&[]);
-    let art_lines: Vec<Line> = art
-        .iter()
-        .map(|l| {
-            Line::from(Span::styled(
-                *l,
-                Style::default().fg(Color::Rgb(100, 180, 120)),
-            ))
-        })
-        .collect();
-
-    let art_widget = Paragraph::new(art_lines).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Rgb(60, 100, 60)))
-            .title(Span::styled(
-                " Scene ",
-                Style::default().fg(Color::Rgb(100, 180, 120)),
-            )),
-    );
-    frame.render_widget(art_widget, panels[0]);
-
-    // Right panel: story
-    let mut lines = vec![Line::from("")];
-
-    if let Some(beat) = story {
+    let mut lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            "  Select a Volume",
+            Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+    ];
+    for (i, vol) in app.volumes.iter().enumerate() {
+        let cursor = if i == selected { "▶ " } else { "  " };
+        let style = if i == selected {
+            Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Color::Rgb(140, 140, 140))
+        };
         lines.push(Line::from(Span::styled(
-            format!("  ── {} ──", beat.title),
-            Style::default()
-                .fg(Color::Rgb(240, 80, 50))
-                .add_modifier(ratatui::style::Modifier::BOLD),
+            format!("  {}Vol {} — {}   {}", cursor, vol.id, vol.title, vol.tagline),
+            style,
         )));
         lines.push(Line::from(""));
-        for story_line in beat.lines {
-            lines.push(Line::from(Span::styled(
-                *story_line,
-                Style::default().fg(Color::Rgb(180, 210, 180)),
-            )));
-        }
     }
-
-    lines.push(Line::from(""));
     lines.push(Line::from(Span::styled(
-        format!("  Level {} of {}", level + 1, app.level_count()),
+        "  [↑↓] Navigate  [Enter] Select  [Esc] Back",
         Style::default().fg(Color::DarkGray),
     )));
-    lines.push(Line::from(""));
-    // Pulsing Enter prompt
-    lines.push(Line::from(vec![
-        Span::styled("  ❯ Press ", Style::default().fg(Color::Rgb(180, 180, 180))),
-        Span::styled(
-            "[Enter]",
-            Style::default()
-                .fg(Color::Rgb(255, 255, 100))
-                .add_modifier(ratatui::style::Modifier::BOLD),
-        ),
-        Span::styled(
-            " or [Space] to begin the chapter",
-            Style::default().fg(Color::Rgb(180, 180, 180)),
-        ),
-    ]));
 
-    let story_widget = Paragraph::new(lines).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Rgb(60, 80, 60)))
-            .title(Span::styled(
-                " The Codewright Chronicles ",
-                Style::default()
-                    .fg(Color::Rgb(240, 80, 50))
-                    .add_modifier(ratatui::style::Modifier::BOLD),
-            )),
-    );
-    frame.render_widget(story_widget, panels[1]);
+    let p = Paragraph::new(lines)
+        .style(Style::default().bg(BG))
+        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(ACCENT))
+            .title(Span::styled(" GitQuest — Choose Your Volume ", Style::default().fg(ACCENT).add_modifier(Modifier::BOLD))));
+    frame.render_widget(p, area);
 }
 
-fn draw_playing(frame: &mut Frame, app: &App, level: usize) {
-    let area = frame.area();
+// ── Chapter intro ─────────────────────────────────────────────────────────────
 
-    // Layout: top HUD bar, main game area, bottom key bar
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(3),
-            Constraint::Min(10),
-            Constraint::Length(3),
-        ])
+fn draw_chapter_intro(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usize) {
+    let area = frame.area();
+    let vol = match app.current_volume(vol_idx) { Some(v) => v, None => return };
+    let ch = match app.current_chapter(vol_idx, ch_idx) { Some(c) => c, None => return };
+
+    let panels = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(34), Constraint::Min(40)])
         .split(area);
 
-    // HUD top bar
-    hud::draw_hud(frame, app, level, chunks[0]);
+    // Left: ASCII art
+    let art_lines: Vec<Line> = ch.scene_art.iter().map(|l| {
+        Line::from(Span::styled(*l, Style::default().fg(Color::Rgb(80, 180, 100))))
+    }).collect();
+    let art_widget = Paragraph::new(art_lines)
+        .style(Style::default().bg(BG))
+        .block(Block::default().borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Rgb(40, 80, 40)))
+            .title(Span::styled(" Scene ", Style::default().fg(Color::Rgb(80, 180, 100)))));
+    frame.render_widget(art_widget, panels[0]);
 
-    // Game content
-    let game_area = chunks[1];
-    if let Some(lvl) = app.levels.get(level) {
-        lvl.render(frame, game_area);
+    // Right: volume header + chapter title + NPC dialogue
+    let mut lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("  Vol {} — {}", vol.id, vol.title),
+            Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+        )),
+        Line::from(Span::styled(
+            format!("  {}", vol.tagline),
+            Style::default().fg(Color::Rgb(140, 140, 140)).add_modifier(Modifier::ITALIC),
+        )),
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("  Chapter {} — {}", ch_idx + 1, ch.title),
+            Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("  {} says:", ch.npc_name),
+            Style::default().fg(Color::Rgb(255, 200, 80)).add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+    ];
+    for line in ch.npc_dialogue {
+        lines.push(Line::from(Span::styled(
+            format!("  ╎ {}", line),
+            Style::default().fg(Color::Rgb(200, 200, 200)).add_modifier(Modifier::ITALIC),
+        )));
     }
+    lines.push(Line::from(""));
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled("  ❯ Press ", Style::default().fg(Color::Rgb(160, 160, 160))),
+        Span::styled("[Enter]", Style::default().fg(Color::Rgb(255, 255, 100)).add_modifier(Modifier::BOLD)),
+        Span::styled(" to begin   ", Style::default().fg(Color::Rgb(160, 160, 160))),
+        Span::styled("[Esc]", Style::default().fg(Color::DarkGray)),
+        Span::styled(" Menu", Style::default().fg(Color::DarkGray)),
+    ]));
 
-    // Bottom key bar
-    draw_key_bar(frame, app, level, chunks[2]);
+    let right = Paragraph::new(lines)
+        .style(Style::default().bg(BG))
+        .block(Block::default().borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Rgb(50, 50, 80)))
+            .title(Span::styled(" Briefing ", Style::default().fg(ACCENT).add_modifier(Modifier::BOLD))));
+    frame.render_widget(right, panels[1]);
 }
 
-fn draw_key_bar(frame: &mut Frame, app: &App, level: usize, area: Rect) {
-    let hint_key = Span::styled("[?] Hint", Style::default().fg(Color::Rgb(180, 180, 180)));
-    let quit_key = Span::styled("[Ctrl+Q] Quit", Style::default().fg(Color::Rgb(180, 180, 180)));
+// ── Chapter complete ──────────────────────────────────────────────────────────
 
-    let level_keys = match level {
-        1 => "[↑↓] Navigate  [Space] Stage  [A] Stage All  [S] Submit",
-        2 => "[Type] Commit  [Enter] Submit  [Backspace] Edit",
-        3 => "[↑↓] Navigate  [K/J] Move Item  [Enter] Confirm",
-        _ => "[Type] Command  [Enter] Submit  [Backspace] Edit",
-    };
+fn draw_chapter_complete(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usize, earned_xp: u32, anim_tick: usize) {
+    let area = frame.area();
+    let ch = match app.current_chapter(vol_idx, ch_idx) { Some(c) => c, None => return };
 
-    let keys_line = Line::from(vec![
-        Span::styled(format!("  {level_keys}  "), Style::default().fg(Color::DarkGray)),
-        hint_key,
-        Span::styled("  ", Style::default()),
-        quit_key,
-    ]);
+    // Pulsing border colour
+    let border_color = if (anim_tick / 2) % 2 == 0 { Color::Rgb(60, 220, 100) } else { ACCENT };
 
-    // Hint overlay if active
-    if app.show_hint {
-        let hint = app.level_hint(level);
-        let hint_para = Paragraph::new(Line::from(Span::styled(
-            format!("  💡 {hint}"),
-            Style::default().fg(Color::Cyan).add_modifier(ratatui::style::Modifier::BOLD),
-        )))
-        .block(Block::default()
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Cyan))
-            .title(Span::styled(" Hint ", Style::default().fg(Color::Cyan))));
-        frame.render_widget(hint_para, area);
-    } else {
-        let bar = Paragraph::new(keys_line)
-            .block(Block::default()
-                .borders(Borders::TOP)
-                .border_style(Style::default().fg(Color::Rgb(40, 40, 60))));
-        frame.render_widget(bar, area);
+    // Reveal success message character by character
+    let msg_chars: usize = (anim_tick * 4).min(ch.success_message.len());
+    let revealed_msg: String = ch.success_message.chars().take(msg_chars).collect();
+
+    let xp_bar_filled = ((earned_xp as usize * 20) / (ch.xp as usize).max(1)).min(20);
+    let xp_bar = "▓".repeat(xp_bar_filled) + &"░".repeat(20 - xp_bar_filled);
+
+    let mut lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            "  ✓  Chapter Complete!",
+            Style::default().fg(Color::Rgb(60, 220, 100)).add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("  {}", revealed_msg),
+            Style::default().fg(Color::Rgb(200, 220, 200)).add_modifier(Modifier::ITALIC),
+        )),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("  XP earned  ", Style::default().fg(Color::DarkGray)),
+            Span::styled(format!("+{earned_xp}"), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        ]),
+        Line::from(Span::styled(format!("  [{xp_bar}]"), Style::default().fg(Color::Rgb(60, 180, 80)))),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("  Total XP   ", Style::default().fg(Color::DarkGray)),
+            Span::styled(format!("{}", app.total_xp()), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        ]),
+        Line::from(vec![
+            Span::styled("  Rank       ", Style::default().fg(Color::DarkGray)),
+            Span::styled(app.rank(), Style::default().fg(Color::Rgb(255, 215, 0)).add_modifier(Modifier::BOLD)),
+        ]),
+        Line::from(""),
+        Line::from(Span::styled(
+            "  Advancing to next chapter…  [Enter] skip",
+            Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+        )),
+    ];
+
+    // Attempts penalty note
+    if app.chapter_state.attempts > 1 {
+        lines.push(Line::from(Span::styled(
+            format!("  ({} attempts — XP adjusted)", app.chapter_state.attempts),
+            Style::default().fg(Color::Rgb(180, 140, 60)),
+        )));
     }
+    if app.chapter_state.hint_level > 0 {
+        lines.push(Line::from(Span::styled(
+            format!("  ({} hints used — XP adjusted)", app.chapter_state.hint_level),
+            Style::default().fg(Color::Rgb(100, 160, 200)),
+        )));
+    }
+
+    let p = Paragraph::new(lines)
+        .style(Style::default().bg(BG))
+        .block(Block::default().borders(Borders::ALL)
+            .border_style(Style::default().fg(border_color))
+            .title(Span::styled(" Chapter Complete ", Style::default().fg(border_color).add_modifier(Modifier::BOLD))));
+    frame.render_widget(p, area);
+}
+
+// ── Volume complete ───────────────────────────────────────────────────────────
+
+fn draw_volume_complete(frame: &mut Frame, app: &App, vol_idx: usize) {
+    let area = frame.area();
+    let vol = match app.current_volume(vol_idx) { Some(v) => v, None => return };
+
+    let vol_xp: u32 = app.save.xp_per_chapter
+        .get(vol_idx).map(|v| v.iter().sum()).unwrap_or(0);
+
+    let next_vol = app.volumes.get(vol_idx + 1);
+
+    let stars = "★★★★★";
+
+    let mut lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("  ✦  Volume {} Complete!", vol_idx + 1),
+            Style::default().fg(Color::Rgb(255, 215, 0)).add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("  \"{}\"", vol.title),
+            Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+        )),
+        Line::from(Span::styled(
+            format!("  {}", vol.tagline),
+            Style::default().fg(Color::Rgb(140, 140, 140)).add_modifier(Modifier::ITALIC),
+        )),
+        Line::from(""),
+        Line::from(Span::styled(format!("  {stars}"), Style::default().fg(Color::Rgb(255, 215, 0)))),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("  Volume XP  ", Style::default().fg(Color::DarkGray)),
+            Span::styled(format!("{vol_xp}"), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        ]),
+        Line::from(vec![
+            Span::styled("  Total XP   ", Style::default().fg(Color::DarkGray)),
+            Span::styled(format!("{}", app.total_xp()), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        ]),
+        Line::from(vec![
+            Span::styled("  Rank       ", Style::default().fg(Color::DarkGray)),
+            Span::styled(app.rank(), Style::default().fg(Color::Rgb(255, 215, 0)).add_modifier(Modifier::BOLD)),
+        ]),
+        Line::from(""),
+    ];
+
+    if let Some(next) = next_vol {
+        lines.push(Line::from(Span::styled(
+            format!("  Up next: Vol {} — \"{}\"", next.id, next.title),
+            Style::default().fg(Color::Rgb(180, 220, 180)),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("  {}", next.tagline),
+            Style::default().fg(Color::Rgb(120, 140, 120)).add_modifier(Modifier::ITALIC),
+        )));
+        lines.push(Line::from(""));
+        lines.push(Line::from(Span::styled(
+            "  [Enter] Begin next volume   [Esc] Main menu",
+            Style::default().fg(Color::DarkGray),
+        )));
+    } else {
+        lines.push(Line::from(Span::styled(
+            "  [Enter] Final chapter →",
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    let p = Paragraph::new(lines)
+        .style(Style::default().bg(BG))
+        .block(Block::default().borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Rgb(255, 215, 0)))
+            .title(Span::styled(
+                " Volume Complete ",
+                Style::default().fg(Color::Rgb(255, 215, 0)).add_modifier(Modifier::BOLD),
+            ))
+            .title_alignment(Alignment::Center));
+    frame.render_widget(p, area);
+}
+
+// ── Game complete ─────────────────────────────────────────────────────────────
+
+const TROPHY: &[&str] = &[
+    r"      ___________      ",
+    r"     '._==_==_=_.'     ",
+    r"     .-\:      /-.     ",
+    r"    | (|:.     |) |    ",
+    r"     '-|:.     |-'     ",
+    r"       \::.    /       ",
+    r"        '::. .'        ",
+    r"          ) (          ",
+    r"        _.' '._        ",
+    r"       '-------'       ",
+];
+
+fn draw_game_complete(frame: &mut Frame, app: &App) {
+    let area = frame.area();
+
+    let centered = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Fill(1), Constraint::Length(62), Constraint::Fill(1)])
+        .split(area);
+    let centered = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Fill(1), Constraint::Length(32), Constraint::Fill(1)])
+        .split(centered[1]);
+    let game_area = centered[1];
+
+    let mut lines = vec![Line::from("")];
+    for t in TROPHY {
+        lines.push(Line::from(Span::styled(*t, Style::default().fg(Color::Rgb(255, 215, 0)).add_modifier(Modifier::BOLD))));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "     You survived NovaTech. Git mastered.",
+        Style::default().fg(Color::Rgb(60, 220, 100)).add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(""));
+
+    // Per-volume breakdown
+    for (vi, vol) in app.volumes.iter().enumerate() {
+        let vol_xp: u32 = app.save.xp_per_chapter.get(vi).map(|v| v.iter().sum()).unwrap_or(0);
+        let filled = ((vol_xp as usize * 16) / 150).min(16);
+        let bar = "▓".repeat(filled) + &"░".repeat(16 - filled);
+        lines.push(Line::from(vec![
+            Span::styled(format!("  Vol {} ", vi + 1), Style::default().fg(ACCENT)),
+            Span::styled(format!("{:<28}", vol.title), Style::default().fg(Color::Rgb(140, 140, 140))),
+            Span::styled(format!("[{bar}]"), Style::default().fg(Color::Rgb(80, 180, 80))),
+            Span::styled(format!(" {vol_xp:>4} XP"), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        ]));
+    }
+
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled("  Total XP   ", Style::default().fg(Color::DarkGray)),
+        Span::styled(format!("{}", app.total_xp()), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  Final Rank  ", Style::default().fg(Color::DarkGray)),
+        Span::styled(app.rank(), Style::default().fg(Color::Rgb(255, 215, 0)).add_modifier(Modifier::BOLD)),
+    ]));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "  The real git adventure starts now. Go ship something.",
+        Style::default().fg(Color::Rgb(140, 180, 140)).add_modifier(Modifier::ITALIC),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "  [Enter] Back to menu   [Q] Quit",
+        Style::default().fg(Color::DarkGray),
+    )));
+
+    let bg = Paragraph::new("").style(Style::default().bg(BG));
+    frame.render_widget(bg, area);
+
+    let p = Paragraph::new(lines)
+        .style(Style::default().bg(BG))
+        .block(Block::default().borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Rgb(255, 215, 0)))
+            .title(Span::styled(
+                " GitQuest Complete — Alex Chen, Principal Engineer ",
+                Style::default().fg(Color::Rgb(255, 215, 0)).add_modifier(Modifier::BOLD),
+            ))
+            .title_alignment(Alignment::Center));
+    frame.render_widget(p, game_area);
 }

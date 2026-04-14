@@ -1,3 +1,9 @@
+// app.rs — GitQuest state machine, event loop, and save system.
+//
+// State flow:
+//   Menu → VolumeSelect → ChapterIntro → Playing → ChapterComplete
+//       → (next chapter) or VolumeComplete → GameComplete
+
 use std::{
     io,
     time::{Duration, Instant},
@@ -7,34 +13,24 @@ use ratatui::{backend::Backend, Terminal};
 
 use crate::{
     audio::{MusicPlayer, Sound, SoundManager},
-    game::{
-        level_add::LevelAdd,
-        level_branch::LevelBranch,
-        level_commit::LevelCommit,
-        level_init::LevelInit,
-        level_push::LevelPush,
-        Level, LevelStatus,
-    },
     ui,
+    volumes::{all_volumes, rank_title, Chapter, Volume},
 };
+use crate::ui::chapter::ChapterState;
 
 const TICK_RATE: Duration = Duration::from_millis(100);
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum AppState {
-    Menu { selected: usize },
-    LevelIntro { level: usize },  // player must press Enter/Space to start
-    Playing { level: usize },
-    LevelComplete { level: usize, score: u32 },
-    Transition { next_level: usize, frame: usize },
-    GameComplete { total_score: u32 },
-    Quit,
-}
+// ── Save data ─────────────────────────────────────────────────────────────────
 
 pub struct SaveData {
-    pub current_level: usize,
-    pub scores: Vec<u32>,
-    pub total_score: u32,
+    pub vol_idx: usize,   // 0-based index into volumes vec
+    pub ch_idx: usize,    // 0-based index into current volume's chapters
+    pub total_xp: u32,
+    pub xp_per_chapter: Vec<Vec<u32>>, // [vol][ch]
+}
+
+fn save_path() -> Option<std::path::PathBuf> {
+    dirs::home_dir().map(|h| h.join(".gitquest").join("save.json"))
 }
 
 impl SaveData {
@@ -42,17 +38,26 @@ impl SaveData {
         if let Some(path) = save_path() {
             if let Ok(data) = std::fs::read_to_string(&path) {
                 if let Ok(json) = serde_json::from_str::<serde_json::Value>(&data) {
-                    let level = json["current_level"].as_u64().unwrap_or(0) as usize;
-                    let scores = json["scores"]
+                    let vol_idx = json["vol_idx"].as_u64().unwrap_or(0) as usize;
+                    let ch_idx = json["ch_idx"].as_u64().unwrap_or(0) as usize;
+                    let total_xp = json["total_xp"].as_u64().unwrap_or(0) as u32;
+                    let xp_per_chapter = json["xp_per_chapter"]
                         .as_array()
-                        .map(|a| a.iter().map(|v| v.as_u64().unwrap_or(0) as u32).collect())
-                        .unwrap_or_else(|| vec![0; 5]);
-                    let total = json["total_score"].as_u64().unwrap_or(0) as u32;
-                    return Self { current_level: level, scores, total_score: total };
+                        .map(|vols| {
+                            vols.iter()
+                                .map(|v| {
+                                    v.as_array()
+                                        .map(|chs| chs.iter().map(|x| x.as_u64().unwrap_or(0) as u32).collect())
+                                        .unwrap_or_default()
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    return Self { vol_idx, ch_idx, total_xp, xp_per_chapter };
                 }
             }
         }
-        Self { current_level: 0, scores: vec![0; 5], total_score: 0 }
+        Self { vol_idx: 0, ch_idx: 0, total_xp: 0, xp_per_chapter: vec![] }
     }
 
     pub fn save(&self) {
@@ -61,29 +66,72 @@ impl SaveData {
                 let _ = std::fs::create_dir_all(dir);
             }
             let json = serde_json::json!({
-                "current_level": self.current_level,
-                "scores": self.scores,
-                "total_score": self.total_score,
+                "vol_idx": self.vol_idx,
+                "ch_idx": self.ch_idx,
+                "total_xp": self.total_xp,
+                "xp_per_chapter": self.xp_per_chapter,
             });
-            let _ = std::fs::write(path, json.to_string());
+            let _ = std::fs::write(&path, json.to_string());
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.vol_idx = 0;
+        self.ch_idx = 0;
+        self.total_xp = 0;
+        self.xp_per_chapter = vec![];
+    }
+
+    pub fn record_chapter(&mut self, vol_idx: usize, ch_idx: usize, xp: u32) {
+        // Grow the jagged vec if needed
+        while self.xp_per_chapter.len() <= vol_idx {
+            self.xp_per_chapter.push(vec![]);
+        }
+        while self.xp_per_chapter[vol_idx].len() <= ch_idx {
+            self.xp_per_chapter[vol_idx].push(0);
+        }
+        self.xp_per_chapter[vol_idx][ch_idx] = xp;
+        self.total_xp = self.xp_per_chapter.iter().flat_map(|v| v.iter().copied()).sum();
+        // Advance progress pointer
+        self.vol_idx = vol_idx;
+        self.ch_idx = ch_idx + 1;
     }
 }
 
-fn save_path() -> Option<std::path::PathBuf> {
-    dirs::home_dir().map(|h| h.join(".gitquest").join("save.json"))
+// ── App state ─────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum AppState {
+    /// Main menu (New Game / Continue / Quit)
+    Menu { selected: usize },
+    /// Volume selection screen
+    VolumeSelect { selected: usize },
+    /// Full-screen chapter intro — shows volume + chapter title, NPC first line, press Enter
+    ChapterIntro { vol_idx: usize, ch_idx: usize },
+    /// Active gameplay
+    Playing { vol_idx: usize, ch_idx: usize },
+    /// Chapter complete — brief celebration then auto-advance
+    ChapterComplete { vol_idx: usize, ch_idx: usize, earned_xp: u32, anim_tick: usize },
+    /// Transition flood animation
+    Transition { next_vol: usize, next_ch: usize, frame: usize },
+    /// All chapters in a volume done
+    VolumeComplete { vol_idx: usize },
+    /// All volumes done
+    GameComplete,
+    Quit,
 }
+
+// ── App ───────────────────────────────────────────────────────────────────────
 
 pub struct App {
     pub state: AppState,
     pub save: SaveData,
     pub sound: SoundManager,
     pub music: MusicPlayer,
-    pub levels: Vec<Box<dyn Level>>,
-    pub show_hint: bool,
-    pub hint_timer: u8,
-    pub music_tick_counter: u8, // tick every ~500ms (5 ticks of 100ms)
-    pub anim_tick: usize,       // global animation frame counter, increments every tick
+    pub volumes: Vec<Volume>,
+    pub chapter_state: ChapterState,
+    pub anim_tick: usize,
+    music_tick_counter: u8,
 }
 
 impl App {
@@ -94,211 +142,274 @@ impl App {
             save,
             sound: SoundManager::new(),
             music: MusicPlayer::new(),
-            levels: Self::build_levels(),
-            show_hint: false,
-            hint_timer: 0,
-            music_tick_counter: 0,
+            volumes: all_volumes(),
+            chapter_state: ChapterState::new(),
             anim_tick: 0,
+            music_tick_counter: 0,
         }
     }
 
-    pub fn toggle_mute(&mut self) {
-        self.music.toggle_mute();
+    // ── Accessors ─────────────────────────────────────────────────────────────
+
+    pub fn current_volume(&self, vol_idx: usize) -> Option<&Volume> {
+        self.volumes.get(vol_idx)
     }
 
-    pub fn is_muted(&self) -> bool {
-        self.music.is_muted()
+    pub fn current_chapter(&self, vol_idx: usize, ch_idx: usize) -> Option<&Chapter> {
+        self.volumes.get(vol_idx)?.chapters.get(ch_idx)
     }
 
-    fn build_levels() -> Vec<Box<dyn Level>> {
-        vec![
-            Box::new(LevelInit::new()),
-            Box::new(LevelAdd::new()),
-            Box::new(LevelCommit::new()),
-            Box::new(LevelBranch::new()),
-            Box::new(LevelPush::new()),
-        ]
-    }
+    pub fn total_xp(&self) -> u32 { self.save.total_xp }
+    pub fn rank(&self) -> &'static str { rank_title(self.save.total_xp) }
 
-    #[allow(dead_code)]
-    pub fn current_level(&self) -> Option<&dyn Level> {
-        match &self.state {
-            AppState::Playing { level } | AppState::LevelComplete { level, .. } => {
-                self.levels.get(*level).map(|l| l.as_ref())
-            }
-            _ => None,
-        }
-    }
+    pub fn vol_count(&self) -> usize { self.volumes.len() }
 
-    #[allow(dead_code)]
-    pub fn current_level_index(&self) -> Option<usize> {
-        match &self.state {
-            AppState::Playing { level } => Some(*level),
-            _ => None,
-        }
-    }
+    pub fn toggle_mute(&mut self) { self.music.toggle_mute(); }
 
-    pub fn level_count(&self) -> usize {
-        self.levels.len()
-    }
-
-    pub fn level_name(&self, idx: usize) -> &str {
-        self.levels.get(idx).map(|l| l.name()).unwrap_or("")
-    }
-
-    pub fn level_hint(&self, idx: usize) -> &str {
-        self.levels.get(idx).map(|l| l.hint()).unwrap_or("")
-    }
-
-    pub fn level_description(&self, idx: usize) -> &str {
-        self.levels.get(idx).map(|l| l.description()).unwrap_or("")
-    }
+    // ── Tick (called every 100 ms) ────────────────────────────────────────────
 
     pub fn tick(&mut self) {
         self.anim_tick = self.anim_tick.wrapping_add(1);
-        if self.hint_timer > 0 {
-            self.hint_timer -= 1;
-        }
-        match &self.state.clone() {
-            AppState::Transition { next_level, frame } => {
-                let new_frame = frame + 1;
-                // 30 frames total: 0-14 flood, 15-19 hold, 20-29 drain
-                if new_frame >= 30 {
-                    if *next_level >= self.levels.len() {
-                        let total = self.save.total_score;
-                        self.sound.play(Sound::GameComplete);
-                        self.state = AppState::GameComplete { total_score: total };
-                    } else {
-                        self.levels[*next_level] = match *next_level {
-                            0 => Box::new(LevelInit::new()),
-                            1 => Box::new(LevelAdd::new()),
-                            2 => Box::new(LevelCommit::new()),
-                            3 => Box::new(LevelBranch::new()),
-                            4 => Box::new(LevelPush::new()),
-                            _ => return,
-                        };
-                        self.state = AppState::LevelIntro { level: *next_level };
-                    }
-                } else {
-                    self.state = AppState::Transition { next_level: *next_level, frame: new_frame };
-                }
+
+        // Decay flash timers
+        if self.chapter_state.flash_wrong > 0 { self.chapter_state.flash_wrong -= 1; }
+        if self.chapter_state.flash_correct > 0 { self.chapter_state.flash_correct -= 1; }
+
+        // ChapterComplete auto-advance after ~2 s (20 ticks)
+        if let AppState::ChapterComplete { vol_idx, ch_idx, earned_xp: _, anim_tick } = &self.state.clone() {
+            let new_tick = anim_tick + 1;
+            if new_tick >= 20 {
+                self.advance_after_complete(*vol_idx, *ch_idx);
+            } else {
+                self.state = AppState::ChapterComplete {
+                    vol_idx: *vol_idx, ch_idx: *ch_idx,
+                    earned_xp: match &self.state { AppState::ChapterComplete { earned_xp, .. } => *earned_xp, _ => 0 },
+                    anim_tick: new_tick,
+                };
             }
-            _ => {}
+        }
+
+        // Transition animation frames
+        if let AppState::Transition { next_vol, next_ch, frame } = &self.state.clone() {
+            let new_frame = frame + 1;
+            if new_frame >= 30 {
+                self.state = AppState::ChapterIntro { vol_idx: *next_vol, ch_idx: *next_ch };
+                self.chapter_state = ChapterState::new();
+            } else {
+                self.state = AppState::Transition { next_vol: *next_vol, next_ch: *next_ch, frame: new_frame };
+            }
+        }
+
+        // Music tick every 5 game ticks (~500 ms)
+        self.music_tick_counter = self.music_tick_counter.wrapping_add(1);
+        if self.music_tick_counter % 5 == 0 {
+            self.music.tick();
         }
     }
 
-    /// Called when player presses Enter/Space on the intro screen
-    pub fn handle_intro_key(&mut self, key: KeyEvent) {
-        if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') {
-            if let AppState::LevelIntro { level } = &self.state {
-                let level = *level;
+    fn advance_after_complete(&mut self, vol_idx: usize, ch_idx: usize) {
+        let vol = match self.volumes.get(vol_idx) { Some(v) => v, None => return };
+        let next_ch = ch_idx + 1;
+        if next_ch < vol.chapters.len() {
+            // Next chapter in same volume
+            self.sound.play(Sound::Transition);
+            self.state = AppState::Transition { next_vol: vol_idx, next_ch, frame: 0 };
+        } else {
+            // Volume done
+            let next_vol = vol_idx + 1;
+            if next_vol < self.volumes.len() {
+                self.state = AppState::VolumeComplete { vol_idx };
+            } else {
+                self.sound.play(Sound::GameComplete);
+                self.state = AppState::GameComplete;
+            }
+        }
+    }
+
+    // ── Key handlers ──────────────────────────────────────────────────────────
+
+    pub fn handle_key(&mut self, key: KeyEvent) {
+        // Global: Ctrl+C quits
+        if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
+            self.state = AppState::Quit;
+            return;
+        }
+        // Global: M toggles music (except when typing in Playing)
+        let is_playing = matches!(&self.state, AppState::Playing { .. });
+        if !is_playing && (key.code == KeyCode::Char('m') || key.code == KeyCode::Char('M')) {
+            self.toggle_mute();
+            return;
+        }
+
+        match self.state.clone() {
+            AppState::Menu { selected } => self.handle_menu(key, selected),
+            AppState::VolumeSelect { selected } => self.handle_volume_select(key, selected),
+            AppState::ChapterIntro { vol_idx, ch_idx } => self.handle_intro(key, vol_idx, ch_idx),
+            AppState::Playing { vol_idx, ch_idx } => self.handle_playing(key, vol_idx, ch_idx),
+            AppState::ChapterComplete { vol_idx, ch_idx, .. } => self.handle_chapter_complete(key, vol_idx, ch_idx),
+            AppState::VolumeComplete { vol_idx } => self.handle_volume_complete(key, vol_idx),
+            AppState::GameComplete => self.handle_game_complete(key),
+            AppState::Transition { .. } => {} // no keys during transition
+            AppState::Quit => {}
+        }
+    }
+
+    fn handle_menu(&mut self, key: KeyEvent, selected: usize) {
+        match key.code {
+            KeyCode::Up | KeyCode::Char('k') => {
+                let s = selected.saturating_sub(1);
+                self.state = AppState::Menu { selected: s };
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                let s = (selected + 1).min(2);
+                self.state = AppState::Menu { selected: s };
+            }
+            KeyCode::Enter | KeyCode::Char(' ') => {
                 self.sound.play(Sound::Correct);
-                self.state = AppState::Playing { level };
-            }
-        }
-    }
-
-    pub fn handle_menu_key(&mut self, key: KeyEvent) {
-        match &self.state.clone() {
-            AppState::Menu { selected } => {
-                match key.code {
-                    KeyCode::Up | KeyCode::Char('k') => {
-                        self.sound.play(Sound::KeyPress);
-                        let s = selected.saturating_sub(1);
-                        self.state = AppState::Menu { selected: s };
+                match selected {
+                    0 => { // New Game
+                        self.save.reset();
+                        self.chapter_state = ChapterState::new();
+                        self.state = AppState::ChapterIntro { vol_idx: 0, ch_idx: 0 };
                     }
-                    KeyCode::Down | KeyCode::Char('j') => {
-                        self.sound.play(Sound::KeyPress);
-                        let s = (selected + 1).min(2);
-                        self.state = AppState::Menu { selected: s };
+                    1 => { // Continue
+                        let vi = self.save.vol_idx.min(self.volumes.len().saturating_sub(1));
+                        let ci = self.save.ch_idx.min(
+                            self.volumes.get(vi).map(|v| v.chapters.len().saturating_sub(1)).unwrap_or(0)
+                        );
+                        self.chapter_state = ChapterState::new();
+                        self.state = AppState::ChapterIntro { vol_idx: vi, ch_idx: ci };
                     }
-                    KeyCode::Enter => {
-                        self.sound.play(Sound::Correct);
-                        match selected {
-                            0 => {
-                                // New game
-                                self.save = SaveData { current_level: 0, scores: vec![0; 5], total_score: 0 };
-                                self.levels = Self::build_levels();
-                                self.state = AppState::LevelIntro { level: 0 };
-                            }
-                            1 => {
-                                // Continue
-                                let lvl = self.save.current_level.min(self.levels.len().saturating_sub(1));
-                                self.state = AppState::LevelIntro { level: lvl };
-                            }
-                            2 => self.state = AppState::Quit,
-                            _ => {}
-                        }
-                    }
-                    KeyCode::Char('q') => self.state = AppState::Quit,
-                    _ => {}
+                    _ => self.state = AppState::Quit,
                 }
             }
             _ => {}
         }
     }
 
-    pub fn handle_playing_key(&mut self, key: KeyEvent) {
-        let idx = match &self.state {
-            AppState::Playing { level } => *level,
-            _ => return,
+    fn handle_volume_select(&mut self, key: KeyEvent, selected: usize) {
+        let max = self.volumes.len().saturating_sub(1);
+        match key.code {
+            KeyCode::Up | KeyCode::Char('k') => {
+                self.state = AppState::VolumeSelect { selected: selected.saturating_sub(1) };
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                self.state = AppState::VolumeSelect { selected: (selected + 1).min(max) };
+            }
+            KeyCode::Enter | KeyCode::Char(' ') => {
+                self.chapter_state = ChapterState::new();
+                self.state = AppState::ChapterIntro { vol_idx: selected, ch_idx: 0 };
+            }
+            KeyCode::Esc | KeyCode::Char('q') => {
+                self.state = AppState::Menu { selected: 0 };
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_intro(&mut self, key: KeyEvent, vol_idx: usize, ch_idx: usize) {
+        if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') {
+            self.sound.play(Sound::KeyPress);
+            self.chapter_state = ChapterState::new();
+            self.state = AppState::Playing { vol_idx, ch_idx };
+        }
+        if key.code == KeyCode::Esc || key.code == KeyCode::Char('q') {
+            self.state = AppState::Menu { selected: 0 };
+        }
+    }
+
+    fn handle_playing(&mut self, key: KeyEvent, vol_idx: usize, ch_idx: usize) {
+        let chapter = match self.current_chapter(vol_idx, ch_idx) {
+            Some(c) => c.clone(),
+            None => return,
         };
 
+        // ? toggles hint panel
         if key.code == KeyCode::Char('?') {
-            self.show_hint = !self.show_hint;
+            self.chapter_state.show_hint = !self.chapter_state.show_hint;
             self.sound.play(Sound::KeyPress);
             return;
         }
-        if key.code == KeyCode::Char('q') && key.modifiers.contains(KeyModifiers::CONTROL) {
-            self.state = AppState::Quit;
+        // H reveals next hint level
+        if key.code == KeyCode::Char('h') || key.code == KeyCode::Char('H') {
+            if self.chapter_state.show_hint && self.chapter_state.hint_level < chapter.hints.len() {
+                self.chapter_state.hint_level += 1;
+                self.sound.play(Sound::KeyPress);
+            } else if !self.chapter_state.show_hint {
+                self.chapter_state.show_hint = true;
+                self.sound.play(Sound::KeyPress);
+            }
             return;
         }
 
         self.sound.play(Sound::KeyPress);
 
-        let status = {
-            let level = self.levels[idx].as_mut();
-            level.update(key)
-        };
+        match key.code {
+            KeyCode::Backspace => { self.chapter_state.input.pop(); }
+            KeyCode::Enter => {
+                let input = self.chapter_state.input.trim().to_string();
+                self.chapter_state.attempts += 1;
 
-        match status {
-            LevelStatus::InProgress => {}
-            LevelStatus::Completed => {
-                let score = self.levels[idx].score();
-                self.sound.play(Sound::LevelComplete);
-                self.save.scores[idx] = score;
-                self.save.total_score = self.save.scores.iter().sum();
-                self.save.current_level = (idx + 1).min(self.levels.len());
-                self.save.save();
-                self.state = AppState::LevelComplete { level: idx, score };
-            }
-            LevelStatus::Failed(msg) => {
-                self.sound.play(Sound::Error);
-                let _ = msg;
-            }
-        }
-    }
+                let correct = chapter.accepted_answers.iter().any(|a| {
+                    // Flexible matching: lowercase, collapse spaces
+                    let norm_input: String = input.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
+                    let norm_ans: String = a.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
+                    norm_input == norm_ans
+                });
 
-    pub fn handle_level_complete_key(&mut self, key: KeyEvent) {
-        match &self.state.clone() {
-            AppState::LevelComplete { level, .. } => {
-                if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') {
-                    self.sound.play(Sound::Transition);
-                    self.state = AppState::Transition { next_level: level + 1, frame: 0 };
+                if correct {
+                    // Score: base xp, -1 per extra attempt, -1 per hint revealed
+                    let xp = chapter.xp
+                        .saturating_sub((self.chapter_state.attempts.saturating_sub(1)) * 2)
+                        .saturating_sub(self.chapter_state.hint_level as u32 * 3)
+                        .max(chapter.xp / 4); // floor at 25%
+                    self.save.record_chapter(vol_idx, ch_idx, xp);
+                    self.save.save();
+                    self.sound.play(Sound::LevelComplete);
+                    self.chapter_state.flash_correct = 8;
+                    self.chapter_state.completed = true;
+                    self.state = AppState::ChapterComplete { vol_idx, ch_idx, earned_xp: xp, anim_tick: 0 };
+                } else {
+                    self.sound.play(Sound::Error);
+                    self.chapter_state.flash_wrong = 6;
+                    self.chapter_state.input.clear();
                 }
             }
+            KeyCode::Char(c) => { self.chapter_state.input.push(c); }
             _ => {}
         }
     }
 
-    pub fn handle_game_complete_key(&mut self, key: KeyEvent) {
-        // 'm' is handled globally (mute toggle); only Enter/q return to menu
+    fn handle_chapter_complete(&mut self, key: KeyEvent, vol_idx: usize, ch_idx: usize) {
+        // Any key skips the auto-advance timer
+        if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') {
+            self.advance_after_complete(vol_idx, ch_idx);
+        }
+    }
+
+    fn handle_volume_complete(&mut self, key: KeyEvent, vol_idx: usize) {
+        if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') {
+            let next = vol_idx + 1;
+            if next < self.volumes.len() {
+                self.chapter_state = ChapterState::new();
+                self.state = AppState::ChapterIntro { vol_idx: next, ch_idx: 0 };
+            } else {
+                self.state = AppState::GameComplete;
+            }
+        }
+        if key.code == KeyCode::Esc || key.code == KeyCode::Char('q') {
+            self.state = AppState::Menu { selected: 0 };
+        }
+    }
+
+    fn handle_game_complete(&mut self, key: KeyEvent) {
         if key.code == KeyCode::Enter || key.code == KeyCode::Char('q') {
-            self.sound.play(Sound::KeyPress);
             self.state = AppState::Menu { selected: 0 };
         }
     }
 }
+
+// ── Event loop ────────────────────────────────────────────────────────────────
 
 pub fn run<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Box<dyn std::error::Error>>
 where
@@ -309,69 +420,24 @@ where
     let mut last_tick = Instant::now();
 
     loop {
+        // Render
         let size = terminal.size()?;
         if size.width < 80 || size.height < 24 {
-            terminal.draw(|f| {
-                ui::draw_resize_warning(f);
-            })?;
+            terminal.draw(|f| ui::draw_resize_warning(f))?;
         } else {
-            terminal.draw(|f| {
-                ui::draw(f, &app);
-            })?;
+            terminal.draw(|f| ui::draw(f, &app))?;
         }
 
-        let timeout = TICK_RATE
-            .checked_sub(last_tick.elapsed())
-            .unwrap_or(Duration::ZERO);
-
+        // Poll events
+        let timeout = TICK_RATE.checked_sub(last_tick.elapsed()).unwrap_or(Duration::ZERO);
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
-                    break;
-                }
-                // [M] toggles music — but ONLY on non-playing screens so 'm' can
-                // be typed freely in commit messages, branch commands, etc.
-                // On playing screens the HUD shows "[M] mute" but it only works
-                // when not in a text-input level (use Ctrl+M instead there).
-                let is_playing = matches!(&app.state, AppState::Playing { .. });
-                if !is_playing
-                    && (key.code == KeyCode::Char('m') || key.code == KeyCode::Char('M'))
-                    && !matches!(&app.state, AppState::Menu { .. })
-                {
-                    app.toggle_mute();
-                }
-                match &app.state {
-                    AppState::Menu { .. } => app.handle_menu_key(key),
-                    AppState::LevelIntro { .. } => app.handle_intro_key(key),
-                    AppState::Playing { .. } => app.handle_playing_key(key),
-                    AppState::LevelComplete { .. } => app.handle_level_complete_key(key),
-                    AppState::GameComplete { .. } => app.handle_game_complete_key(key),
-                    AppState::Quit => break,
-                    _ => {}
-                }
+                app.handle_key(key);
             }
         }
 
+        // Tick
         if last_tick.elapsed() >= TICK_RATE {
-            // Tick the current level (for animations)
-            if let AppState::Playing { level } = &app.state.clone() {
-                let idx = *level;
-                let status = app.levels[idx].tick();
-                if status == LevelStatus::Completed {
-                    let score = app.levels[idx].score();
-                    app.sound.play(Sound::LevelComplete);
-                    app.save.scores[idx] = score;
-                    app.save.total_score = app.save.scores.iter().sum();
-                    app.save.current_level = (idx + 1).min(app.levels.len());
-                    app.save.save();
-                    app.state = AppState::LevelComplete { level: idx, score };
-                }
-            }
-            // Tick music player every 5 ticks (~500ms)
-            app.music_tick_counter = app.music_tick_counter.wrapping_add(1);
-            if app.music_tick_counter % 5 == 0 {
-                app.music.tick();
-            }
             app.tick();
             last_tick = Instant::now();
         }
