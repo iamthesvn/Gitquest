@@ -324,19 +324,19 @@ impl App {
             None => return,
         };
 
-        // ? toggles hint panel
+        // [?] toggles hint panel open/closed — never conflicts with typing
         if key.code == KeyCode::Char('?') {
             self.chapter_state.show_hint = !self.chapter_state.show_hint;
             self.sound.play(Sound::KeyPress);
             return;
         }
-        // H reveals next hint level
-        if key.code == KeyCode::Char('h') || key.code == KeyCode::Char('H') {
-            if self.chapter_state.show_hint && self.chapter_state.hint_level < chapter.hints.len() {
+
+        // [H] (uppercase only, via Shift) reveals next hint tier —
+        // but ONLY when the hint panel is already open, so that lowercase
+        // 'h' always falls through to the terminal input below.
+        if key.code == KeyCode::Char('H') && self.chapter_state.show_hint {
+            if self.chapter_state.hint_level < chapter.hints.len() {
                 self.chapter_state.hint_level += 1;
-                self.sound.play(Sound::KeyPress);
-            } else if !self.chapter_state.show_hint {
-                self.chapter_state.show_hint = true;
                 self.sound.play(Sound::KeyPress);
             }
             return;

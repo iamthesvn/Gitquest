@@ -529,7 +529,7 @@ fn draw_hints(frame: &mut Frame, chapter: &Chapter, state: &ChapterState, area: 
     // If no hints are revealed yet, show a placeholder
     if revealed == 0 {
         lines.push(Line::from(Span::styled(
-            "  Press [H] to reveal the first hint.",
+            "  Press [Shift+H] to reveal the first hint.",
             Style::default()
                 .fg(Color::DarkGray)
                 .add_modifier(Modifier::ITALIC),
@@ -547,7 +547,7 @@ fn draw_hints(frame: &mut Frame, chapter: &Chapter, state: &ChapterState, area: 
     } else {
         Line::from(vec![
             Span::styled(
-                "  [H] ",
+                "  [Shift+H] ",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
