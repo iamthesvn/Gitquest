@@ -1,9 +1,6 @@
 # GitQuest
 
-> Learn Git, one command at a time — in your terminal.
-
-A Ratatui TUI game that teaches the 5 most essential Git commands through
-hands-on, interactive levels. No quizzes. No slides. Just do the thing.
+> Learn Git by living it. A terminal game where every command is a real work scenario.
 
 ```
   ██████╗ ██╗████████╗  ██████╗ ██╗   ██╗███████╗███████╗████████╗
@@ -14,6 +11,12 @@ hands-on, interactive levels. No quizzes. No slides. Just do the thing.
   ╚═════╝ ╚═╝   ╚═╝     ╚══▀▀═╝  ╚═════╝ ╚══════╝╚══════╝   ╚═╝
 ```
 
+You are **Alex Chen**, a new hire at NovaTech. Your teammates are waiting.
+Your laptop is blank. Production is about to break. Type the right git
+command or fall behind.
+
+---
+
 ## Quick start
 
 ```bash
@@ -23,53 +26,144 @@ cargo install --path .
 gitquest
 ```
 
-Requires Rust stable. No other dependencies — audio is synthesised at runtime.
+Requires Rust stable (1.75+). No external dependencies — audio is synthesised at runtime, no files to bundle.
 
-## The levels
+---
 
-| # | Command | What you do |
-|---|---------|-------------|
-| 1 | `git init` | Type the command as a starfield materialises around you |
-| 2 | `git add` | Select which files to stage — and learn why `.gitignore` exists |
-| 3 | `git commit` | Write a real commit message; a vault door seals your work |
-| 4 | `git branch` | Fork the timeline, do work on a feature branch, switch back |
-| 5 | `git push` | Launch a rocket — watch commits travel to the remote |
+## The story — NovaTech
 
-Each level ends with a short "what you just learned" panel, then a Git-logo
-flood animation transitions you to the next chapter.
+GitQuest is structured as **3 volumes** of 5 chapters each (15 chapters total).
+Each chapter drops you into a real office scenario. A colleague briefs you,
+gives you context, and then you type the git command that solves the problem.
+
+### Volume 1 — First Day at NovaTech
+*"You got the job. Now prove you deserve it."*
+
+| Ch | Title | Command |
+|----|-------|---------|
+| 1 | The Empty Desk | `git init` |
+| 2 | The Config Chaos | `git config --global user.name` |
+| 3 | The Missing Files | `git add` |
+| 4 | The First Commit | `git commit -m` |
+| 5 | The Repo Goes Remote | `git push origin main` |
+
+### Volume 2 — The Production Crisis
+*"Something is broken in prod. All eyes are on you."*
+
+| Ch | Title | Command |
+|----|-------|---------|
+| 1 | The Hotfix Branch | `git checkout -b` |
+| 2 | The Stash | `git stash` |
+| 3 | The Log Detective | `git log` |
+| 4 | The Revert | `git revert HEAD` |
+| 5 | The Merge | `git merge` |
+
+### Volume 3 — The Politics of Code
+*"You've survived the crisis. Now survive the team."*
+
+| Ch | Title | Command |
+|----|-------|---------|
+| 1 | The Conflict | `git pull origin main` |
+| 2 | The Blame Game | `git blame` |
+| 3 | The Cherry Pick | `git cherry-pick` |
+| 4 | The Cleanup | `git branch -d` |
+| 5 | The Tag | `git tag -a` |
+
+---
+
+## The cast
+
+| Character | Role | Personality |
+|-----------|------|-------------|
+| **Priya** | Senior dev / your mentor | Calm, precise, quietly rooting for you |
+| **Jordan** | Product manager | Anxious, dramatic, one deploy from a breakdown |
+| **Raj** | Senior engineer | Blunt, sarcastic, respects competence and nothing else |
+| **Marcus** | CEO | Visionary, oblivious, occasionally causes the fires he asks you to fight |
+
+---
+
+## Hint system
+
+Every chapter has **3 tiered hints** — you decide how much help you want.
+
+| Key | Action |
+|-----|--------|
+| `?` | Open / close the hint panel |
+| `Shift+H` | Reveal the next hint tier (only when panel is open) |
+
+Hints go from vague nudge → command category → near-exact answer.
+Each hint used costs a small XP penalty. You always earn at least 25% of the base XP.
+
+---
 
 ## Controls
 
 | Key | Action |
 |-----|--------|
-| `Type` | Enter commands / commit messages |
-| `↑ ↓` / `j k` | Navigate lists |
-| `Enter` | Confirm |
-| `Space` | Stage/unstage (Level 2) |
+| `↑ ↓` / `j k` | Navigate menus |
+| `Enter` | Confirm / submit command |
+| `Backspace` | Edit your command |
+| `?` | Toggle hint panel |
+| `Shift+H` | Reveal next hint (panel must be open) |
 | `M` | Mute / unmute background music |
-| `?` | Toggle hint |
+| `Esc` | Back / main menu |
 | `Ctrl+C` | Quit |
+
+---
+
+## Scoring
+
+- Each chapter has a base XP value (10–35 XP depending on difficulty)
+- **-2 XP** per extra attempt after the first
+- **-3 XP** per hint tier revealed
+- Score floors at **25%** of base — you always earn something
+- Commands are matched case-insensitively with collapsed whitespace, so minor formatting differences don't count as wrong
+
+**Ranks** (total XP across all 15 chapters):
+
+| XP | Rank |
+|----|------|
+| 0–49 | Intern |
+| 50–149 | Junior Dev |
+| 150–299 | Mid-Level Engineer |
+| 300–499 | Senior Dev |
+| 500+ | Principal Engineer |
+
+---
 
 ## Features
 
-- State machine architecture — easy to add new levels
-- Synthesised ambient music + SFX (no audio files bundled)
-- Save / continue via `~/.gitquest/save.json`
-- Git-logo flood transition animation between levels
-- Score and rank system (Git Novice → Linus Himself)
+- Narrative-driven gameplay — real office characters, real tension
+- 3 volumes × 5 chapters = 15 scenarios covering essential git workflows
+- 3-tier hint system with XP penalty — not hand-holding, just scaffolding
+- Synthesised ambient music (3 tracks) + sound effects via `rodio` — no audio files
+- Git-logo flood transition animation between chapters
+- Save / continue system at `~/.gitquest/save.json`
+- Terminal minimum 80×24 — shows resize warning if too small
 - Runs on macOS, Linux, and Windows
+
+---
 
 ## Tech
 
-Rust 2021 · [ratatui](https://github.com/ratatui/ratatui) · crossterm · rodio · serde_json · dirs
+| | |
+|---|---|
+| Language | Rust 2021 |
+| TUI | [ratatui](https://github.com/ratatui/ratatui) 0.30 + crossterm 0.29 |
+| Audio | rodio 0.19 (synthesised — no bundled files) |
+| Save | serde_json + dirs |
 
-## Adding a level
+---
 
-1. Create `src/game/level_foo.rs` and implement the `Level` trait
-2. Register it in `src/game/mod.rs`
-3. Add it to `App::build_levels()` in `src/app.rs`
+## Adding a chapter
 
-That's it — the engine is level-agnostic.
+1. Add a new `Chapter { .. }` entry to the relevant volume in `src/volumes/story.rs`
+2. Fill in: `title`, `scene_art`, `npc_name`, `npc_dialogue`, `task_prompt`, `accepted_answers`, `hints` (3 items), `success_message`, `xp`
+3. That's it — the engine picks it up automatically
+
+To add a whole new volume, append a new `Volume { .. }` to the `vec![]` in `all_volumes()`.
+
+---
 
 ## License
 
