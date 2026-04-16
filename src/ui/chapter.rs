@@ -25,6 +25,7 @@ use ratatui::{
 };
 
 use crate::volumes::Chapter;
+use crate::anim::AnimState;
 
 // ── Colour palette ────────────────────────────────────────────────────────────
 
@@ -124,6 +125,7 @@ pub fn draw_chapter(
     ch_num: usize,
     chapter: &Chapter,
     state: &ChapterState,
+    anim: &AnimState,
 ) {
     let area = frame.area();
 
@@ -140,17 +142,18 @@ pub fn draw_chapter(
     //   [3] Hint panel        — 0 (hidden) or dynamic height
     //
     // The hint panel height is computed first so Layout constraints are exact.
-    let hint_height = if state.show_hint {
-        // 2 border lines + 1 footer line + number of revealed hints (min 1 blank)
+    // Animate hint panel open/close via anim.hint_openness (0.0 → 1.0)
+    let openness = *anim.hint_openness;
+    let show_hint_anim = openness > 0.001;
+
+    let full_hint_height = {
         let revealed = state.hint_level.min(chapter.hints.len());
         (revealed.max(1) + 3) as u16
-    } else {
-        0
     };
 
     // Clamp hint height so it doesn't crowd out the core layout.
     let max_hint = area.height.saturating_sub(14);
-    let hint_height = hint_height.min(max_hint);
+    let hint_height = ((full_hint_height as f64 * openness) as u16).min(max_hint);
 
     let terminal_height: u16 = 3; // border + 1 content row + border
     let hud_height: u16 = 3;      // border + 1 content row + border
@@ -160,7 +163,7 @@ pub fn draw_chapter(
         .height
         .saturating_sub(hud_height + terminal_height + hint_height);
 
-    let vertical_constraints: Vec<Constraint> = if state.show_hint {
+    let vertical_constraints: Vec<Constraint> = if show_hint_anim {
         vec![
             Constraint::Length(hud_height),
             Constraint::Length(mid_height),
@@ -184,11 +187,11 @@ pub fn draw_chapter(
     // because we provided at least 3 constraints above.
     draw_hud(frame, vol_num, ch_num, chapter, state, rows[0]);
     draw_mid(frame, chapter, state, rows[1]);
-    draw_terminal(frame, chapter, state, rows[2]);
+    draw_terminal(frame, chapter, state, rows[2], anim);
 
-    if state.show_hint {
+    if show_hint_anim {
         if let Some(hint_area) = rows.get(3) {
-            draw_hints(frame, chapter, state, *hint_area);
+            draw_hints(frame, chapter, state, *hint_area, anim);
         }
     }
 }
@@ -443,7 +446,7 @@ fn draw_task_prompt(frame: &mut Frame, chapter: &Chapter, area: Rect) {
 /// * Normal:        dark bg, ACCENT border.
 /// * `flash_wrong`  > 0: red bg + red border.
 /// * `flash_correct`> 0: green border.
-fn draw_terminal(frame: &mut Frame, _chapter: &Chapter, state: &ChapterState, area: Rect) {
+fn draw_terminal(frame: &mut Frame, _chapter: &Chapter, state: &ChapterState, area: Rect, anim: &AnimState) {
     if area.width == 0 || area.height == 0 {
         return;
     }
@@ -473,10 +476,12 @@ fn draw_terminal(frame: &mut Frame, _chapter: &Chapter, state: &ChapterState, ar
     // Blinking cursor: always rendered (the terminal owns the blink illusion
     // via state.flash_wrong / flash_correct toggling; the cursor itself is
     // always visible here so the player knows where they are).
+    let blink = *anim.cursor_blink;
+    let intensity = (blink * 255.0).clamp(0.0, 255.0) as u8;
     let cursor = Span::styled(
         "|",
         Style::default()
-            .fg(Color::Rgb(200, 200, 255))
+            .fg(Color::Rgb(intensity, intensity, 255))
             .add_modifier(Modifier::BOLD),
     );
 
@@ -502,7 +507,7 @@ fn draw_terminal(frame: &mut Frame, _chapter: &Chapter, state: &ChapterState, ar
 /// Only called when `state.show_hint == true`.
 /// Shows `hints[0..state.hint_level]` as bullet points, then a footer line
 /// prompting the player to reveal the next hint or telling them all are shown.
-fn draw_hints(frame: &mut Frame, chapter: &Chapter, state: &ChapterState, area: Rect) {
+fn draw_hints(frame: &mut Frame, chapter: &Chapter, state: &ChapterState, area: Rect, _anim: &AnimState) {
     if area.width == 0 || area.height == 0 {
         return;
     }
@@ -529,7 +534,7 @@ fn draw_hints(frame: &mut Frame, chapter: &Chapter, state: &ChapterState, area: 
     // If no hints are revealed yet, show a placeholder
     if revealed == 0 {
         lines.push(Line::from(Span::styled(
-            "  Press [Shift+H] to reveal the first hint.",
+            "  Press [Tab] to reveal the first hint.",
             Style::default()
                 .fg(Color::DarkGray)
                 .add_modifier(Modifier::ITALIC),
@@ -547,7 +552,7 @@ fn draw_hints(frame: &mut Frame, chapter: &Chapter, state: &ChapterState, area: 
     } else {
         Line::from(vec![
             Span::styled(
-                "  [Shift+H] ",
+                "  [Tab] ",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),

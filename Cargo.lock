@@ -40,6 +40,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "animate"
+version = "0.3.0"
+source = "git+https://github.com/vyfor/animate#399c1386048654be38620fca4cc708c824b98999"
+dependencies = [
+ "animate-core",
+ "animate-macros",
+]
+
+[[package]]
+name = "animate-core"
+version = "0.3.0"
+source = "git+https://github.com/vyfor/animate#399c1386048654be38620fca4cc708c824b98999"
+dependencies = [
+ "ratatui",
+]
+
+[[package]]
+name = "animate-macros"
+version = "0.3.0"
+source = "git+https://github.com/vyfor/animate#399c1386048654be38620fca4cc708c824b98999"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
 name = "anyhow"
 version = "1.0.102"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -614,6 +642,7 @@ dependencies = [
 name = "gitquest"
 version = "0.1.0"
 dependencies = [
+ "animate",
  "crossterm",
  "dirs",
  "ratatui",

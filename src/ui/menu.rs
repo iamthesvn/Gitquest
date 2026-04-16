@@ -28,7 +28,7 @@ const QUEST_LOGO: &[&str] = &[
 
 const MENU_ITEMS: &[&str] = &["     New Game", "     Continue", "     Quit"];
 
-pub fn draw_menu(frame: &mut Frame, area: Rect, selected: usize) {
+pub fn draw_menu(frame: &mut Frame, area: Rect, selected: usize, menu_glow: u8) {
     // Wide enough for QUEST logo (44 chars) + padding
     let horizontal = Layout::default()
         .direction(Direction::Horizontal)
@@ -111,15 +111,19 @@ pub fn draw_menu(frame: &mut Frame, area: Rect, selected: usize) {
         Style::default().fg(Color::Rgb(80, 80, 80)),
     )));
 
+    let glow = menu_glow.max(180);
+    let border_color = Color::Rgb(glow, glow.saturating_sub(40), glow.saturating_sub(60));
+    let title_color = Color::Rgb(glow, glow.saturating_sub(30), glow.saturating_sub(50));
+
     let menu = Paragraph::new(lines)
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Rgb(240, 80, 50)))
+                .border_style(Style::default().fg(border_color))
                 .title(Span::styled(
                     " GitQuest v1.0 ",
                     Style::default()
-                        .fg(Color::Rgb(240, 80, 50))
+                        .fg(title_color)
                         .add_modifier(Modifier::BOLD),
                 ))
                 .title_alignment(Alignment::Center),

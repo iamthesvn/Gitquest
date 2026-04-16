@@ -20,7 +20,7 @@ const BG: Color = Color::Rgb(10, 10, 18);
 pub fn draw(frame: &mut Frame, app: &App) {
     match &app.state {
         AppState::Menu { selected } => {
-            menu::draw_menu(frame, frame.area(), *selected);
+            menu::draw_menu(frame, frame.area(), *selected, *app.anim.menu_glow);
         }
         AppState::VolumeSelect { selected } => {
             draw_volume_select(frame, app, *selected);
@@ -36,6 +36,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
                     ch_idx + 1,
                     ch,
                     &app.chapter_state,
+                    &app.anim,
                 );
             }
         }
@@ -43,7 +44,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
             draw_chapter_complete(frame, app, *vol_idx, *ch_idx, *earned_xp, *anim_tick);
         }
         AppState::Transition { next_vol, next_ch, frame: anim_frame } => {
-            transition::draw_transition(frame, *next_vol, *anim_frame);
+            transition::draw_transition(frame, *next_vol, *anim_frame, *app.anim.transition_shimmer);
             let _ = next_ch;
         }
         AppState::VolumeComplete { vol_idx } => {
@@ -178,7 +179,7 @@ fn draw_chapter_intro(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usiz
 
 // ── Chapter complete ──────────────────────────────────────────────────────────
 
-fn draw_chapter_complete(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usize, earned_xp: u32, anim_tick: usize) {
+fn draw_chapter_complete(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usize, _earned_xp: u32, anim_tick: usize) {
     let area = frame.area();
     let ch = match app.current_chapter(vol_idx, ch_idx) { Some(c) => c, None => return };
 
@@ -189,7 +190,8 @@ fn draw_chapter_complete(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: u
     let msg_chars: usize = (anim_tick * 4).min(ch.success_message.len());
     let revealed_msg: String = ch.success_message.chars().take(msg_chars).collect();
 
-    let xp_bar_filled = ((earned_xp as usize * 20) / (ch.xp as usize).max(1)).min(20);
+    let animated_xp = *app.anim.xp_rise;
+    let xp_bar_filled = ((animated_xp as usize * 20) / (ch.xp as usize).max(1)).min(20);
     let xp_bar = "▓".repeat(xp_bar_filled) + &"░".repeat(20 - xp_bar_filled);
 
     let mut lines = vec![
@@ -206,7 +208,7 @@ fn draw_chapter_complete(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: u
         Line::from(""),
         Line::from(vec![
             Span::styled("  XP earned  ", Style::default().fg(Color::DarkGray)),
-            Span::styled(format!("+{earned_xp}"), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(format!("+{animated_xp}"), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
         ]),
         Line::from(Span::styled(format!("  [{xp_bar}]"), Style::default().fg(Color::Rgb(60, 180, 80)))),
         Line::from(""),
@@ -220,7 +222,7 @@ fn draw_chapter_complete(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: u
         ]),
         Line::from(""),
         Line::from(Span::styled(
-            "  Advancing to next chapter…  [Enter] skip",
+            "  [Enter] Next chapter",
             Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
         )),
     ];

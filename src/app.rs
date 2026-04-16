@@ -12,10 +12,12 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{backend::Backend, Terminal};
 
 use crate::{
+    anim::AnimState,
     audio::{MusicPlayer, Sound, SoundManager},
     ui,
     volumes::{all_volumes, rank_title, Chapter, Volume},
 };
+use animate::Animate;
 use crate::ui::chapter::ChapterState;
 
 const TICK_RATE: Duration = Duration::from_millis(100);
@@ -130,6 +132,7 @@ pub struct App {
     pub music: MusicPlayer,
     pub volumes: Vec<Volume>,
     pub chapter_state: ChapterState,
+    pub anim: AnimState,
     pub anim_tick: usize,
     music_tick_counter: u8,
 }
@@ -138,12 +141,15 @@ impl App {
     pub fn new() -> Self {
         let save = SaveData::load();
         Self {
-            state: AppState::Menu { selected: 0 },
+            state: AppState::Menu {
+                selected: 0,
+            },
             save,
             sound: SoundManager::new(),
             music: MusicPlayer::new(),
             volumes: all_volumes(),
             chapter_state: ChapterState::new(),
+            anim: AnimState::init(),
             anim_tick: 0,
             music_tick_counter: 0,
         }
@@ -169,24 +175,21 @@ impl App {
     // ── Tick (called every 100 ms) ────────────────────────────────────────────
 
     pub fn tick(&mut self) {
+        self.anim.animate();
         self.anim_tick = self.anim_tick.wrapping_add(1);
 
         // Decay flash timers
         if self.chapter_state.flash_wrong > 0 { self.chapter_state.flash_wrong -= 1; }
         if self.chapter_state.flash_correct > 0 { self.chapter_state.flash_correct -= 1; }
 
-        // ChapterComplete auto-advance after ~2 s (20 ticks)
+        // ChapterComplete — animate but do not auto-advance
         if let AppState::ChapterComplete { vol_idx, ch_idx, earned_xp: _, anim_tick } = &self.state.clone() {
             let new_tick = anim_tick + 1;
-            if new_tick >= 20 {
-                self.advance_after_complete(*vol_idx, *ch_idx);
-            } else {
-                self.state = AppState::ChapterComplete {
-                    vol_idx: *vol_idx, ch_idx: *ch_idx,
-                    earned_xp: match &self.state { AppState::ChapterComplete { earned_xp, .. } => *earned_xp, _ => 0 },
-                    anim_tick: new_tick,
-                };
-            }
+            self.state = AppState::ChapterComplete {
+                vol_idx: *vol_idx, ch_idx: *ch_idx,
+                earned_xp: match &self.state { AppState::ChapterComplete { earned_xp, .. } => *earned_xp, _ => 0 },
+                anim_tick: new_tick,
+            };
         }
 
         // Transition animation frames
@@ -213,6 +216,8 @@ impl App {
         if next_ch < vol.chapters.len() {
             // Next chapter in same volume
             self.sound.play(Sound::Transition);
+            self.anim.reset_level_anims();
+            self.anim.graph_growth.set(1.0);
             self.state = AppState::Transition { next_vol: vol_idx, next_ch, frame: 0 };
         } else {
             // Volume done
@@ -327,14 +332,13 @@ impl App {
         // [?] toggles hint panel open/closed — never conflicts with typing
         if key.code == KeyCode::Char('?') {
             self.chapter_state.show_hint = !self.chapter_state.show_hint;
+            self.anim.set_hint_open(self.chapter_state.show_hint);
             self.sound.play(Sound::KeyPress);
             return;
         }
 
-        // [H] (uppercase only, via Shift) reveals next hint tier —
-        // but ONLY when the hint panel is already open, so that lowercase
-        // 'h' always falls through to the terminal input below.
-        if key.code == KeyCode::Char('H') && self.chapter_state.show_hint {
+        // [Tab] reveals next hint tier when the hint panel is already open.
+        if key.code == KeyCode::Tab && self.chapter_state.show_hint {
             if self.chapter_state.hint_level < chapter.hints.len() {
                 self.chapter_state.hint_level += 1;
                 self.sound.play(Sound::KeyPress);
@@ -368,6 +372,7 @@ impl App {
                     self.sound.play(Sound::LevelComplete);
                     self.chapter_state.flash_correct = 8;
                     self.chapter_state.completed = true;
+                    self.anim.start_xp_rise(xp);
                     self.state = AppState::ChapterComplete { vol_idx, ch_idx, earned_xp: xp, anim_tick: 0 };
                 } else {
                     self.sound.play(Sound::Error);
@@ -380,11 +385,8 @@ impl App {
         }
     }
 
-    fn handle_chapter_complete(&mut self, key: KeyEvent, vol_idx: usize, ch_idx: usize) {
-        // Any key skips the auto-advance timer
-        if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') {
-            self.advance_after_complete(vol_idx, ch_idx);
-        }
+    fn handle_chapter_complete(&mut self, _key: KeyEvent, vol_idx: usize, ch_idx: usize) {
+        self.advance_after_complete(vol_idx, ch_idx);
     }
 
     fn handle_volume_complete(&mut self, key: KeyEvent, vol_idx: usize) {
@@ -438,6 +440,7 @@ where
 
         // Tick
         if last_tick.elapsed() >= TICK_RATE {
+            animate::tick(TICK_RATE.as_millis() as usize);
             app.tick();
             last_tick = Instant::now();
         }

@@ -36,7 +36,7 @@ fn logo_row_chars() -> Vec<Vec<char>> {
     LOGO_ROWS.iter().map(|s| s.chars().collect()).collect()
 }
 
-pub fn draw_transition(frame: &mut Frame, next_level: usize, anim_frame: usize) {
+pub fn draw_transition(frame: &mut Frame, next_vol: usize, anim_frame: usize, shimmer: u8) {
     let area = frame.area();
     let width = area.width as usize;
     let height = area.height as usize;
@@ -85,16 +85,17 @@ pub fn draw_transition(frame: &mut Frame, next_level: usize, anim_frame: usize) 
     let visible: std::collections::HashSet<(usize, usize)> =
         order.iter().take(visible_count).copied().collect();
 
-    // Accent colour per next level
-    let accent = match next_level {
-        0 => Color::Rgb(240, 80, 50),
-        1 => Color::Rgb(60, 210, 80),
-        2 => Color::Rgb(80, 150, 255),
-        3 => Color::Rgb(240, 200, 40),
-        4 => Color::Rgb(200, 80, 255),
-        _ => Color::Rgb(240, 80, 50),
+    // Accent colour per next volume, modulated by shimmer
+    let s = shimmer as u8;
+    let accent = match next_vol {
+        0 => Color::Rgb((240u8).saturating_add(s / 4).min(255), (80u8).saturating_add(s / 3).min(255), (50u8).saturating_add(s / 2).min(255)),
+        1 => Color::Rgb((60u8).saturating_add(s / 3).min(255), (210u8).saturating_add(s / 4).min(255), (80u8).saturating_add(s / 2).min(255)),
+        2 => Color::Rgb((80u8).saturating_add(s / 3).min(255), (150u8).saturating_add(s / 3).min(255), (255u8).saturating_sub(s / 4).min(255)),
+        3 => Color::Rgb((240u8).saturating_add(s / 4).min(255), (200u8).saturating_add(s / 4).min(255), (40u8).saturating_add(s / 2).min(255)),
+        4 => Color::Rgb((200u8).saturating_add(s / 4).min(255), (80u8).saturating_add(s / 3).min(255), (255u8).saturating_sub(s / 4).min(255)),
+        _ => Color::Rgb((240u8).saturating_add(s / 4).min(255), (80u8).saturating_add(s / 3).min(255), (50u8).saturating_add(s / 2).min(255)),
     };
-    let border_color = Color::Rgb(240, 80, 50); // git orange for structural chars
+    let border_color = Color::Rgb((240u8).saturating_add(s / 4).min(255), (80u8).saturating_add(s / 3).min(255), (50u8).saturating_add(s / 2).min(255)); // git orange for structural chars
 
     let mut lines: Vec<Line> = Vec::with_capacity(height);
 

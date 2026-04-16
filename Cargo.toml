@@ -1,7 +1,7 @@
 [package]
 name = "gitquest"
-version = "0.1.0"
-edition = "2021"
+version = "0.1.1"
+edition = "2024"
 description = "A terminal game that teaches Git through interactive levels"
 license = "MIT"
 keywords = ["game", "git", "tui", "terminal", "education"]
@@ -19,6 +19,7 @@ rodio = { version = "0.19", default-features = false, features = ["wav"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 dirs = "6"
+animate = { git = "https://github.com/vyfor/animate", features = ["ratatui"] }
 
 [features]
 default = ["audio"]
