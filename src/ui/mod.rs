@@ -5,12 +5,13 @@ pub mod menu;
 pub mod transition;
 
 use ratatui::{
+    Frame,
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
-    Frame,
 };
+use tui_overlay::{Anchor, Overlay, Slide};
 
 use crate::app::{App, AppState};
 
@@ -20,13 +21,13 @@ const BG: Color = Color::Rgb(10, 10, 18);
 pub fn draw(frame: &mut Frame, app: &App) {
     match &app.state {
         AppState::Menu { selected } => {
-            menu::draw_menu(frame, frame.area(), *selected, *app.anim.menu_glow);
+            menu::draw_menu(frame, frame.area(), *selected, *app.anim.border_breathe);
         }
         AppState::VolumeSelect { selected } => {
             draw_volume_select(frame, app, *selected);
         }
         AppState::ChapterIntro { vol_idx, ch_idx } => {
-            draw_chapter_intro(frame, app, *vol_idx, *ch_idx);
+            draw_chapter_intro(frame, app, *vol_idx, *ch_idx, app.anim.intro_typewriter.as_str());
         }
         AppState::Playing { vol_idx, ch_idx } => {
             if let Some(ch) = app.current_chapter(*vol_idx, *ch_idx) {
@@ -41,19 +42,52 @@ pub fn draw(frame: &mut Frame, app: &App) {
             }
         }
         AppState::ChapterComplete { vol_idx, ch_idx, earned_xp, anim_tick } => {
-            draw_chapter_complete(frame, app, *vol_idx, *ch_idx, *earned_xp, *anim_tick);
+            draw_chapter_complete(frame, app, *vol_idx, *ch_idx, *earned_xp, *anim_tick, *app.anim.success_breathe);
         }
         AppState::Transition { next_vol, next_ch, frame: anim_frame } => {
             transition::draw_transition(frame, *next_vol, *anim_frame, *app.anim.transition_shimmer);
             let _ = next_ch;
         }
         AppState::VolumeComplete { vol_idx } => {
-            draw_volume_complete(frame, app, *vol_idx);
+            draw_volume_complete(frame, app, *vol_idx, *app.anim.border_breathe);
         }
         AppState::GameComplete => {
-            draw_game_complete(frame, app);
+            draw_game_complete(frame, app, *app.anim.border_breathe);
         }
         AppState::Quit => {}
+    }
+
+    // ── Toast overlay (rendered on top of everything) ──────────────────────────
+    if app.toast.is_visible() {
+        let toast_overlay = Overlay::new()
+            .anchor(Anchor::Top)
+            .slide(Slide::Top)
+            .width(Constraint::Length(34))
+            .height(Constraint::Length(3))
+            .bg(Color::Rgb(20, 20, 35))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(ACCENT))
+                    .title(Span::styled(
+                        " GitQuest ",
+                        Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+                    )),
+            );
+
+        let mut state = app.toast.overlay.clone();
+        frame.render_stateful_widget(toast_overlay, frame.area(), &mut state);
+
+        if let Some(inner) = state.inner_area() {
+            let text = Paragraph::new(Line::from(vec![Span::styled(
+                app.toast.message.as_str(),
+                Style::default()
+                    .fg(Color::Rgb(255, 215, 0))
+                    .add_modifier(Modifier::BOLD),
+            )]))
+            .alignment(Alignment::Center);
+            frame.render_widget(text, inner);
+        }
     }
 }
 
@@ -109,7 +143,7 @@ fn draw_volume_select(frame: &mut Frame, app: &App, selected: usize) {
 
 // ── Chapter intro ─────────────────────────────────────────────────────────────
 
-fn draw_chapter_intro(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usize) {
+fn draw_chapter_intro(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usize, intro_text: &str) {
     let area = frame.area();
     let vol = match app.current_volume(vol_idx) { Some(v) => v, None => return };
     let ch = match app.current_chapter(vol_idx, ch_idx) { Some(c) => c, None => return };
@@ -130,7 +164,7 @@ fn draw_chapter_intro(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usiz
             .title(Span::styled(" Scene ", Style::default().fg(Color::Rgb(80, 180, 100)))));
     frame.render_widget(art_widget, panels[0]);
 
-    // Right: volume header + chapter title + NPC dialogue
+    // Right: volume header + chapter title + NPC dialogue (typewriter)
     let mut lines = vec![
         Line::from(""),
         Line::from(Span::styled(
@@ -153,12 +187,21 @@ fn draw_chapter_intro(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usiz
         )),
         Line::from(""),
     ];
-    for line in ch.npc_dialogue {
-        lines.push(Line::from(Span::styled(
-            format!("  ╎ {}", line),
-            Style::default().fg(Color::Rgb(200, 200, 200)).add_modifier(Modifier::ITALIC),
-        )));
+
+    // Typewriter-revealed dialogue
+    let revealed_lines: Vec<&str> = intro_text.split('\n').collect();
+    for line in revealed_lines {
+        lines.push(Line::from(vec![
+            Span::styled("  ╎ ", Style::default().fg(Color::Rgb(80, 80, 100))),
+            Span::styled(
+                line,
+                Style::default()
+                    .fg(Color::Rgb(200, 200, 200))
+                    .add_modifier(Modifier::ITALIC),
+            ),
+        ]));
     }
+
     lines.push(Line::from(""));
     lines.push(Line::from(""));
     lines.push(Line::from(vec![
@@ -179,12 +222,11 @@ fn draw_chapter_intro(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usiz
 
 // ── Chapter complete ──────────────────────────────────────────────────────────
 
-fn draw_chapter_complete(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usize, _earned_xp: u32, anim_tick: usize) {
+fn draw_chapter_complete(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: usize, _earned_xp: u32, anim_tick: usize, border_breathe: Color) {
     let area = frame.area();
     let ch = match app.current_chapter(vol_idx, ch_idx) { Some(c) => c, None => return };
 
-    // Pulsing border colour
-    let border_color = if (anim_tick / 2) % 2 == 0 { Color::Rgb(60, 220, 100) } else { ACCENT };
+    let border_color = border_breathe;
 
     // Reveal success message character by character
     let msg_chars: usize = (anim_tick * 4).min(ch.success_message.len());
@@ -251,7 +293,7 @@ fn draw_chapter_complete(frame: &mut Frame, app: &App, vol_idx: usize, ch_idx: u
 
 // ── Volume complete ───────────────────────────────────────────────────────────
 
-fn draw_volume_complete(frame: &mut Frame, app: &App, vol_idx: usize) {
+fn draw_volume_complete(frame: &mut Frame, app: &App, vol_idx: usize, border_breathe: Color) {
     let area = frame.area();
     let vol = match app.current_volume(vol_idx) { Some(v) => v, None => return };
 
@@ -319,7 +361,7 @@ fn draw_volume_complete(frame: &mut Frame, app: &App, vol_idx: usize) {
     let p = Paragraph::new(lines)
         .style(Style::default().bg(BG))
         .block(Block::default().borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Rgb(255, 215, 0)))
+            .border_style(Style::default().fg(border_breathe))
             .title(Span::styled(
                 " Volume Complete ",
                 Style::default().fg(Color::Rgb(255, 215, 0)).add_modifier(Modifier::BOLD),
@@ -343,7 +385,7 @@ const TROPHY: &[&str] = &[
     r"       '-------'       ",
 ];
 
-fn draw_game_complete(frame: &mut Frame, app: &App) {
+fn draw_game_complete(frame: &mut Frame, app: &App, border_breathe: Color) {
     let area = frame.area();
 
     let centered = Layout::default()
@@ -406,7 +448,7 @@ fn draw_game_complete(frame: &mut Frame, app: &App) {
     let p = Paragraph::new(lines)
         .style(Style::default().bg(BG))
         .block(Block::default().borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Rgb(255, 215, 0)))
+            .border_style(Style::default().fg(border_breathe))
             .title(Span::styled(
                 " GitQuest Complete — Alex Chen, Principal Engineer ",
                 Style::default().fg(Color::Rgb(255, 215, 0)).add_modifier(Modifier::BOLD),

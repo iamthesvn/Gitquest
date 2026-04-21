@@ -10,6 +10,7 @@ use std::{
 };
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{backend::Backend, Terminal};
+use tui_overlay::{Easing, OverlayState};
 
 use crate::{
     anim::AnimState,
@@ -100,6 +101,50 @@ impl SaveData {
     }
 }
 
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+/// Speed-bonus toast notification using tui-overlay.
+pub struct Toast {
+    pub overlay: OverlayState,
+    pub message: String,
+    pub hold_ticks: u8,
+}
+
+impl Toast {
+    pub fn new() -> Self {
+        let overlay = OverlayState::new()
+            .with_duration(Duration::from_millis(200))
+            .with_easing(Easing::EaseOut);
+        Self {
+            overlay,
+            message: String::new(),
+            hold_ticks: 0,
+        }
+    }
+
+    /// Show a new toast message. Replaces any existing toast.
+    pub fn show(&mut self, message: String) {
+        self.message = message;
+        self.hold_ticks = 25; // 2.5s hold at 100ms tick rate
+        self.overlay.open();
+    }
+
+    /// Advance animation and auto-close after hold expires.
+    pub fn tick(&mut self) {
+        self.overlay.tick(Duration::from_millis(100));
+        if self.overlay.is_open() && self.hold_ticks > 0 {
+            self.hold_ticks -= 1;
+            if self.hold_ticks == 0 {
+                self.overlay.close();
+            }
+        }
+    }
+
+    pub fn is_visible(&self) -> bool {
+        !self.overlay.is_closed()
+    }
+}
+
 // ── App state ─────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, PartialEq)]
@@ -134,6 +179,7 @@ pub struct App {
     pub chapter_state: ChapterState,
     pub anim: AnimState,
     pub anim_tick: usize,
+    pub toast: Toast,
     music_tick_counter: u8,
 }
 
@@ -151,6 +197,7 @@ impl App {
             chapter_state: ChapterState::new(),
             anim: AnimState::init(),
             anim_tick: 0,
+            toast: Toast::new(),
             music_tick_counter: 0,
         }
     }
@@ -174,11 +221,22 @@ impl App {
 
     pub fn tick(&mut self) {
         self.anim.animate();
+        self.toast.tick();
         self.anim_tick = self.anim_tick.wrapping_add(1);
 
         // Decay flash timers
         if self.chapter_state.flash_wrong > 0 { self.chapter_state.flash_wrong -= 1; }
         if self.chapter_state.flash_correct > 0 { self.chapter_state.flash_correct -= 1; }
+
+        // ChapterIntro — prime the typewriter if it hasn't started yet
+        if let AppState::ChapterIntro { vol_idx, ch_idx } = &self.state
+            && let Some(ch) = self.current_chapter(*vol_idx, *ch_idx)
+        {
+            let dialogue = ch.npc_dialogue.join("\n");
+            if self.anim.intro_typewriter.target() != &dialogue {
+                self.anim.intro_typewriter.set(dialogue);
+            }
+        }
 
         // ChapterComplete — animate but do not auto-advance
         if let AppState::ChapterComplete { vol_idx, ch_idx, earned_xp: _, anim_tick } = &self.state.clone() {
@@ -371,6 +429,7 @@ impl App {
                     self.chapter_state.flash_correct = 8;
                     self.chapter_state.completed = true;
                     self.anim.start_xp_rise(xp);
+                    self.toast.show(format!("⚡ +{xp} XP"));
                     self.state = AppState::ChapterComplete { vol_idx, ch_idx, earned_xp: xp, anim_tick: 0 };
                 } else {
                     self.sound.play(Sound::Error);
@@ -391,13 +450,32 @@ impl App {
         if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') {
             let next = vol_idx + 1;
             if next < self.volumes.len() {
+                // Advance save so Continue sends player to the next volume
+                self.save.vol_idx = next;
+                self.save.ch_idx = 0;
+                self.save.save();
                 self.chapter_state = ChapterState::new();
                 self.state = AppState::ChapterIntro { vol_idx: next, ch_idx: 0 };
             } else {
+                // All volumes complete — pin save at the end
+                self.save.vol_idx = vol_idx;
+                self.save.ch_idx = self.volumes[vol_idx].chapters.len();
+                self.save.save();
                 self.state = AppState::GameComplete;
             }
         }
         if key.code == KeyCode::Esc || key.code == KeyCode::Char('q') {
+            // Player bailed from VolumeComplete — still advance save so they
+            // don't get trapped replaying the last chapter of this volume.
+            let next = vol_idx + 1;
+            if next < self.volumes.len() {
+                self.save.vol_idx = next;
+                self.save.ch_idx = 0;
+            } else {
+                self.save.vol_idx = vol_idx;
+                self.save.ch_idx = self.volumes[vol_idx].chapters.len();
+            }
+            self.save.save();
             self.state = AppState::Menu { selected: 0 };
         }
     }
