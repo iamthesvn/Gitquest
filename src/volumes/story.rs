@@ -41,7 +41,7 @@ pub fn rank_title(xp: u32) -> &'static str {
 // ---------------------------------------------------------------------------
 
 pub fn all_volumes() -> Vec<Volume> {
-    vec![volume_one(), volume_two(), volume_three()]
+    vec![volume_one(), volume_two(), volume_three(), volume_four()]
 }
 
 // ===========================================================================
@@ -641,6 +641,206 @@ fn volume_three() -> Volume {
                 ],
                 success_message: "Tagged! v1.0 is immortalised in the git history. Marcus pops a bottle of sparkling water. 'To the future!'",
                 xp: 35,
+            },
+        ],
+    }
+}
+
+// ===========================================================================
+// VOLUME 4 — "The Review Room"
+// ===========================================================================
+
+fn volume_four() -> Volume {
+    Volume {
+        id: 4,
+        title: "The Review Room",
+        tagline: "Before it ships, someone has to actually read it.",
+        chapters: vec![
+            // ---------------------------------------------------------------
+            // Chapter 1 — The Midnight Edit
+            // ---------------------------------------------------------------
+            Chapter {
+                title: "The Midnight Edit",
+                scene_art: &[
+                    "  ╔══════════════════════════════════════╗",
+                    "  ║  diff --git a/auth.js b/auth.js      ║",
+                    "  ║  -  const token = \"abc\";             ║",
+                    "  ║  +  const token = process.env.TOKEN; ║",
+                    "  ║                                      ║",
+                    "  ║  @@ -42,7 +42,7 @@                  ║",
+                    "  ║  -  if (user) {                      ║",
+                    "  ║  +  if (user && user.active) {       ║",
+                    "  ╚══════════════════════════════════════╝",
+                ],
+                npc_name: "Priya",
+                npc_dialogue: &[
+                    "Alex? You're still here? It's past ten. Jordan said you were 'just fixing a quick bug' three hours ago.",
+                    "Look — I admire the hustle, but before you commit anything at this hour, you need to see what you've actually changed.",
+                    "Late-night commits are where typos live. Console logs. Hardcoded passwords. The ghosts of tired developers.",
+                    "Run a diff. Read it line by line. If it still makes sense when you're awake, THEN you commit.",
+                ],
+                task_prompt: "Show the unstaged line-by-line changes in the working directory.",
+                accepted_answers: &[
+                    "git diff",
+                    "git diff HEAD",
+                ],
+                hints: &[
+                    "You want to see exactly what changed in your files before committing.",
+                    "The basic command for comparing your working directory against the staging area / HEAD.",
+                    "Try: git diff",
+                ],
+                success_message: "Diff scrolls up. Priya squints. 'Okay... that actually looks sensible. One small win for sleep-deprived engineers.'",
+                xp: 30,
+            },
+
+            // ---------------------------------------------------------------
+            // Chapter 2 — The Staged Mistake
+            // ---------------------------------------------------------------
+            Chapter {
+                title: "The Staged Mistake",
+                scene_art: &[
+                    "  ╔══════════════════════════════════════╗",
+                    "  ║  Staged vs HEAD                      ║",
+                    "  ║                                      ║",
+                    "  ║  -  debug.log                        ║",
+                    "  ║  +  debug.log  ← oops!               ║",
+                    "  ║                                      ║",
+                    "  ║  config.js:                          ║",
+                    "  ║  -  API_KEY = \"prod\"                 ║",
+                    "  ║  +  API_KEY = \"test\"                 ║",
+                    "  ╚══════════════════════════════════════╝",
+                ],
+                npc_name: "Priya",
+                npc_dialogue: &[
+                    "Hold on. You staged everything with 'git add .', didn't you?",
+                    "I can see debug.log in there. And your config.js still points to the test API key. We do NOT push test keys to production.",
+                    "You need to check what's actually staged — what's in the index versus what's already committed to HEAD.",
+                    "This is the difference between 'I think I staged the right stuff' and 'I KNOW I staged the right stuff.'",
+                ],
+                task_prompt: "Show the changes that are currently staged for commit (staged vs HEAD).",
+                accepted_answers: &[
+                    "git diff --cached",
+                    "git diff --staged",
+                ],
+                hints: &[
+                    "You need to compare the staging area against the last commit.",
+                    "There's a flag for 'cached' or 'staged' that shows exactly what will go into the next commit.",
+                    "Try: git diff --cached",
+                ],
+                success_message: "The staged diff reveals the test key. Priya: 'Unstage that. Fix it. Then commit. Sleep can wait five more minutes.'",
+                xp: 30,
+            },
+
+            // ---------------------------------------------------------------
+            // Chapter 3 — The Wall of Text
+            // ---------------------------------------------------------------
+            Chapter {
+                title: "The Wall of Text",
+                scene_art: &[
+                    "  ╔══════════════════════════════════════╗",
+                    "  ║  5 files changed, 147 insertions(+), ║",
+                    "  ║  23 deletions(-)                     ║",
+                    "  ║                                      ║",
+                    "  ║  src/auth.js     |  42 +++++--       ║",
+                    "  ║  src/db.js       |  12 +--          ║",
+                    "  ║  package.json    |   3 +-            ║",
+                    "  ║  README.md       |  90 ++++++++++++   ║",
+                    "  ║  tests/auth.test |   0               ║",
+                    "  ╚══════════════════════════════════════╝",
+                ],
+                npc_name: "Raj",
+                npc_dialogue: &[
+                    "Alex. You sent me a diff that's four hundred lines long. I have three other PRs to review and a deploy in an hour.",
+                    "I don't need to read every line right now. I need the HEADLINES. How many files? How many lines added? How many deleted?",
+                    "Give me the statistical summary first. If the numbers look sane, THEN I'll read the actual diff.",
+                    "There's a flag for that. Use it. Save both of us some time.",
+                ],
+                task_prompt: "Show a statistical summary of changed files with insertion and deletion counts.",
+                accepted_answers: &[
+                    "git diff --stat",
+                    "git diff --stat HEAD",
+                ],
+                hints: &[
+                    "You want a high-level overview: which files changed and by how much.",
+                    "Git has a flag that prints a table of files with insertion/deletion counts instead of line-by-line diffs.",
+                    "Try: git diff --stat",
+                ],
+                success_message: "The stats pop up. Raj nods slowly. 'Five files, mostly README. Okay. I can live with that.'",
+                xp: 35,
+            },
+
+            // ---------------------------------------------------------------
+            // Chapter 4 — The Scope Creep
+            // ---------------------------------------------------------------
+            Chapter {
+                title: "The Scope Creep",
+                scene_art: &[
+                    "  ╔══════════════════════════════════════╗",
+                    "  ║  src/auth.js                         ║",
+                    "  ║  src/db.js                           ║",
+                    "  ║  package.json                        ║",
+                    "  ║  README.md                           ║",
+                    "  ║  tests/auth.test.js                  ║",
+                    "  ║                                      ║",
+                    "  ║  (filenames only — no noise)         ║",
+                    "  ╚══════════════════════════════════════╝",
+                ],
+                npc_name: "Jordan",
+                npc_dialogue: &[
+                    "So Marcus asked me to update the release notes for tomorrow's deploy. He wants to know EVERY file that changed.",
+                    "But I don't need to see the actual code. I just need the FILE NAMES. So I can check if docs are updated. So I can tell QA what to test.",
+                    "Is there a way to get just the list of files? No plus signs, no minus signs, no code. Just names. Clean and simple.",
+                    "If I have to scroll through another thousand-line diff I am going to cry into my ergonomic keyboard.",
+                ],
+                task_prompt: "List only the file paths that changed, with no diff content.",
+                accepted_answers: &[
+                    "git diff --name-only",
+                    "git diff --name-only HEAD",
+                ],
+                hints: &[
+                    "You want just the filenames, nothing else.",
+                    "Git has a flag that suppresses all diff content and prints only the affected file paths.",
+                    "Try: git diff --name-only",
+                ],
+                success_message: "A clean list of five files. Jordan copies it into a spreadsheet. 'Beautiful. No crying today.'",
+                xp: 35,
+            },
+
+            // ---------------------------------------------------------------
+            // Chapter 5 — The Audit Trail
+            // ---------------------------------------------------------------
+            Chapter {
+                title: "The Audit Trail",
+                scene_art: &[
+                    "  ╔══════════════════════════════════════╗",
+                    "  ║  A  src/new-feature.js               ║",
+                    "  ║  M  src/auth.js                      ║",
+                    "  ║  M  src/db.js                        ║",
+                    "  ║  D  src/old-auth.js                  ║",
+                    "  ║  R  src/utils.js → src/helpers.js    ║",
+                    "  ║                                      ║",
+                    "  ║  A=Added M=Modified D=Deleted        ║",
+                    "  ╚══════════════════════════════════════╝",
+                ],
+                npc_name: "Marcus",
+                npc_dialogue: &[
+                    "So our security auditor is here — yes, an actual person in a blazer — and she needs to know what happened in the last release.",
+                    "Not just WHICH files. She needs to know WHAT happened to them. Were they added? Modified? Deleted? Renamed?",
+                    "She has a checklist. Compliance requires status codes. I don't make the rules, Alex. I just get the emails when we fail audits.",
+                    "There's a git command that shows the file list WITH a letter telling you what happened to each one. A for Added, M for Modified, you get the idea.",
+                ],
+                task_prompt: "List changed files with their change type (Added, Modified, Deleted, Renamed).",
+                accepted_answers: &[
+                    "git diff --name-status",
+                    "git diff --name-status HEAD",
+                ],
+                hints: &[
+                    "You need filenames paired with a single-letter status code describing what happened.",
+                    "Git has a flag that outputs exactly that: A, M, D, R, etc. for each changed file.",
+                    "Try: git diff --name-status",
+                ],
+                success_message: "The auditor checks her list. Marcus whispers, 'She smiled. I have never seen her smile.' Victory.",
+                xp: 40,
             },
         ],
     }
