@@ -32,7 +32,7 @@ Requires Rust stable (1.75+). No external dependencies — audio is synthesised 
 
 ## The story — NovaTech
 
-GitQuest is structured as **3 volumes** of 5 chapters each (15 chapters total).
+GitQuest is structured as **4 volumes** of 5 chapters each (20 chapters total).
 Each chapter drops you into a real office scenario. A colleague briefs you,
 gives you context, and then you type the git command that solves the problem.
 
@@ -68,6 +68,17 @@ gives you context, and then you type the git command that solves the problem.
 | 3 | The Cherry Pick | `git cherry-pick` |
 | 4 | The Cleanup | `git branch -d` |
 | 5 | The Tag | `git tag -a` |
+
+### Volume 4 — The Review Room
+*"Before it ships, someone has to actually read it."*
+
+| Ch | Title | Command |
+|----|-------|---------|
+| 1 | The Midnight Edit | `git diff` |
+| 2 | The Staged Mistake | `git diff --cached` |
+| 3 | The Wall of Text | `git diff --stat` |
+| 4 | The Scope Creep | `git diff --name-only` |
+| 5 | The Audit Trail | `git diff --name-status` |
 
 ---
 
@@ -113,13 +124,13 @@ Each hint used costs a small XP penalty. You always earn at least 25% of the bas
 
 ## Scoring
 
-- Each chapter has a base XP value (10–35 XP depending on difficulty)
+- Each chapter has a base XP value (10–40 XP depending on difficulty)
 - **-2 XP** per extra attempt after the first
 - **-3 XP** per hint tier revealed
 - Score floors at **25%** of base — you always earn something
 - Commands are matched case-insensitively with collapsed whitespace, so minor formatting differences don't count as wrong
 
-**Ranks** (total XP across all 15 chapters):
+**Ranks** (total XP across all 20 chapters):
 
 | XP | Rank |
 |----|------|
@@ -134,7 +145,7 @@ Each hint used costs a small XP penalty. You always earn at least 25% of the bas
 ## Features
 
 - Narrative-driven gameplay — real office characters, real tension
-- 3 volumes × 5 chapters = 15 scenarios covering essential git workflows
+- 4 volumes × 5 chapters = 20 scenarios covering essential git workflows
 - 3-tier hint system with XP penalty — not hand-holding, just scaffolding
 - Synthesised ambient music (3 tracks) + sound effects via `rodio` — no audio files
 - Git-logo flood transition animation between chapters
