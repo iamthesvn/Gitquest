@@ -168,8 +168,6 @@ impl App {
     pub fn total_xp(&self) -> u32 { self.save.total_xp }
     pub fn rank(&self) -> &'static str { rank_title(self.save.total_xp) }
 
-    pub fn vol_count(&self) -> usize { self.volumes.len() }
-
     pub fn toggle_mute(&mut self) { self.music.toggle_mute(); }
 
     // ── Tick (called every 100 ms) ────────────────────────────────────────────

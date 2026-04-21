@@ -79,8 +79,6 @@ pub struct ChapterState {
     pub completed: bool,
     /// Running count of submission attempts.
     pub attempts: u32,
-    /// Wall-clock instant when this chapter was started — used for time-based scoring.
-    pub start_time: std::time::Instant,
 }
 
 impl Default for ChapterState {
@@ -93,19 +91,13 @@ impl Default for ChapterState {
             hint_level: 0,
             completed: false,
             attempts: 0,
-            // Instant::now() cannot be derived, so we provide a sensible default here.
-            start_time: std::time::Instant::now(),
         }
     }
 }
 
 impl ChapterState {
-    /// Create a new state with the start timer set to right now.
     pub fn new() -> Self {
-        Self {
-            start_time: std::time::Instant::now(),
-            ..Default::default()
-        }
+        Self::default()
     }
 }
 

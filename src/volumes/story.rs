@@ -3,7 +3,6 @@
 
 #[derive(Clone)]
 pub struct Chapter {
-    pub id: usize,
     pub title: &'static str,
     pub scene_art: &'static [&'static str],
     pub npc_name: &'static str,
@@ -59,7 +58,6 @@ fn volume_one() -> Volume {
             // Chapter 1 — The Empty Desk
             // ---------------------------------------------------------------
             Chapter {
-                id: 1,
                 title: "The Empty Desk",
                 scene_art: &[
                     "  ╔══════════════════════════════╗",
@@ -96,7 +94,6 @@ fn volume_one() -> Volume {
             // Chapter 2 — The Config Chaos
             // ---------------------------------------------------------------
             Chapter {
-                id: 2,
                 title: "The Config Chaos",
                 scene_art: &[
                     "  ╔════════════════════════════════╗",
@@ -135,7 +132,6 @@ fn volume_one() -> Volume {
             // Chapter 3 — The Missing Files
             // ---------------------------------------------------------------
             Chapter {
-                id: 3,
                 title: "The Missing Files",
                 scene_art: &[
                     "  ╔══════════════════════════════════╗",
@@ -176,7 +172,6 @@ fn volume_one() -> Volume {
             // Chapter 4 — The First Commit
             // ---------------------------------------------------------------
             Chapter {
-                id: 4,
                 title: "The First Commit",
                 scene_art: &[
                     "  ╔═══════════════════════════════════╗",
@@ -222,7 +217,6 @@ fn volume_one() -> Volume {
             // Chapter 5 — The Repo Goes Remote
             // ---------------------------------------------------------------
             Chapter {
-                id: 5,
                 title: "The Repo Goes Remote",
                 scene_art: &[
                     "  ╔══════════════════════════════════╗",
@@ -273,7 +267,6 @@ fn volume_two() -> Volume {
             // Chapter 1 — The Hotfix Branch
             // ---------------------------------------------------------------
             Chapter {
-                id: 1,
                 title: "The Hotfix Branch",
                 scene_art: &[
                     "  ╔════════════════════════════════════╗",
@@ -310,7 +303,6 @@ fn volume_two() -> Volume {
             // Chapter 2 — The Stash
             // ---------------------------------------------------------------
             Chapter {
-                id: 2,
                 title: "The Stash",
                 scene_art: &[
                     "  ╔══════════════════════════════════╗",
@@ -347,7 +339,6 @@ fn volume_two() -> Volume {
             // Chapter 3 — The Log Detective
             // ---------------------------------------------------------------
             Chapter {
-                id: 3,
                 title: "The Log Detective",
                 scene_art: &[
                     "  ╔════════════════════════════════════╗",
@@ -387,7 +378,6 @@ fn volume_two() -> Volume {
             // Chapter 4 — The Revert
             // ---------------------------------------------------------------
             Chapter {
-                id: 4,
                 title: "The Revert",
                 scene_art: &[
                     "  ╔══════════════════════════════════════╗",
@@ -424,7 +414,6 @@ fn volume_two() -> Volume {
             // Chapter 5 — The Merge
             // ---------------------------------------------------------------
             Chapter {
-                id: 5,
                 title: "The Merge",
                 scene_art: &[
                     "  ╔══════════════════════════════════════╗",
@@ -474,7 +463,6 @@ fn volume_three() -> Volume {
             // Chapter 1 — The Conflict
             // ---------------------------------------------------------------
             Chapter {
-                id: 1,
                 title: "The Conflict",
                 scene_art: &[
                     "  ╔════════════════════════════════════╗",
@@ -511,7 +499,6 @@ fn volume_three() -> Volume {
             // Chapter 2 — The Blame Game
             // ---------------------------------------------------------------
             Chapter {
-                id: 2,
                 title: "The Blame Game",
                 scene_art: &[
                     "  ╔═══════════════════════════════════════╗",
@@ -548,7 +535,6 @@ fn volume_three() -> Volume {
             // Chapter 3 — The Cherry Pick
             // ---------------------------------------------------------------
             Chapter {
-                id: 3,
                 title: "The Cherry Pick",
                 scene_art: &[
                     "  ╔════════════════════════════════════════╗",
@@ -585,7 +571,6 @@ fn volume_three() -> Volume {
             // Chapter 4 — The Cleanup
             // ---------------------------------------------------------------
             Chapter {
-                id: 4,
                 title: "The Cleanup",
                 scene_art: &[
                     "  ╔════════════════════════════════════╗",
@@ -623,7 +608,6 @@ fn volume_three() -> Volume {
             // Chapter 5 — The Tag
             // ---------------------------------------------------------------
             Chapter {
-                id: 5,
                 title: "The Tag",
                 scene_art: &[
                     "  ╔═══════════════════════════════════════╗",

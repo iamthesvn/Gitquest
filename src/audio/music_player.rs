@@ -74,8 +74,6 @@ impl MusicPlayer {
         }
     }
 
-    pub fn is_muted(&self) -> bool { self.muted }
-
     #[cfg(feature = "audio")]
     fn play_next(&mut self) {
         let handle = match &self.handle {
