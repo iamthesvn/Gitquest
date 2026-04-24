@@ -14,6 +14,7 @@ use ratatui::{
 use tui_overlay::{Anchor, Overlay, Slide};
 
 use crate::app::{App, AppState};
+use crate::learn::renderer;
 
 const ACCENT: Color = Color::Rgb(255, 120, 40);
 const BG: Color = Color::Rgb(10, 10, 18);
@@ -22,6 +23,12 @@ pub fn draw(frame: &mut Frame, app: &App) {
     match &app.state {
         AppState::Menu { selected } => {
             menu::draw_menu(frame, frame.area(), *selected, *app.anim.border_breathe);
+        }
+        AppState::LearnMenu { selected } => {
+            renderer::draw_learn_menu(frame, app, *selected);
+        }
+        AppState::LearnLesson { lesson_idx, step_idx } => {
+            renderer::draw_learn_lesson(frame, app, *lesson_idx, *step_idx);
         }
         AppState::VolumeSelect { selected } => {
             draw_volume_select(frame, app, *selected);

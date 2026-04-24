@@ -1,6 +1,7 @@
 mod anim;
 mod app;
 mod audio;
+mod learn;
 mod ui;
 mod volumes;
 

@@ -15,11 +15,13 @@ use tui_overlay::{Easing, OverlayState};
 use crate::{
     anim::AnimState,
     audio::{MusicPlayer, Sound, SoundManager},
+    learn::{all_lessons, Lesson},
     ui,
     volumes::{all_volumes, rank_title, Chapter, Volume},
 };
 use animate::Animate;
 use crate::ui::chapter::ChapterState;
+use crate::learn::renderer::LearnLessonState;
 
 const TICK_RATE: Duration = Duration::from_millis(100);
 
@@ -149,8 +151,12 @@ impl Toast {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppState {
-    /// Main menu (New Game / Continue / Quit)
+    /// Main menu (Learn / New Game / Continue / Quit)
     Menu { selected: usize },
+    /// Learn mode menu
+    LearnMenu { selected: usize },
+    /// Learn mode lesson
+    LearnLesson { lesson_idx: usize, step_idx: usize },
     /// Volume selection screen
     VolumeSelect { selected: usize },
     /// Full-screen chapter intro — shows volume + chapter title, NPC first line, press Enter
@@ -176,7 +182,9 @@ pub struct App {
     pub sound: SoundManager,
     pub music: MusicPlayer,
     pub volumes: Vec<Volume>,
+    pub lessons: Vec<Lesson>,
     pub chapter_state: ChapterState,
+    pub learn_state: LearnLessonState,
     pub anim: AnimState,
     pub anim_tick: usize,
     pub toast: Toast,
@@ -194,7 +202,9 @@ impl App {
             sound: SoundManager::new(),
             music: MusicPlayer::new(),
             volumes: all_volumes(),
+            lessons: all_lessons(),
             chapter_state: ChapterState::new(),
+            learn_state: LearnLessonState::new(),
             anim: AnimState::init(),
             anim_tick: 0,
             toast: Toast::new(),
@@ -295,15 +305,17 @@ impl App {
             self.state = AppState::Quit;
             return;
         }
-        // Global: M toggles music (except when typing in Playing)
-        let is_playing = matches!(&self.state, AppState::Playing { .. });
-        if !is_playing && (key.code == KeyCode::Char('m') || key.code == KeyCode::Char('M')) {
+        // Global: M toggles music (except when typing in Playing or LearnLesson)
+        let is_typing = matches!(&self.state, AppState::Playing { .. } | AppState::LearnLesson { .. });
+        if !is_typing && (key.code == KeyCode::Char('m') || key.code == KeyCode::Char('M')) {
             self.toggle_mute();
             return;
         }
 
         match self.state.clone() {
             AppState::Menu { selected } => self.handle_menu(key, selected),
+            AppState::LearnMenu { selected } => self.handle_learn_menu(key, selected),
+            AppState::LearnLesson { lesson_idx, step_idx } => self.handle_learn_lesson(key, lesson_idx, step_idx),
             AppState::VolumeSelect { selected } => self.handle_volume_select(key, selected),
             AppState::ChapterIntro { vol_idx, ch_idx } => self.handle_intro(key, vol_idx, ch_idx),
             AppState::Playing { vol_idx, ch_idx } => self.handle_playing(key, vol_idx, ch_idx),
@@ -322,18 +334,21 @@ impl App {
                 self.state = AppState::Menu { selected: s };
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                let s = (selected + 1).min(2);
+                let s = (selected + 1).min(3);
                 self.state = AppState::Menu { selected: s };
             }
             KeyCode::Enter | KeyCode::Char(' ') => {
                 self.sound.play(Sound::Correct);
                 match selected {
-                    0 => { // New Game
+                    0 => { // Learn
+                        self.state = AppState::LearnMenu { selected: 0 };
+                    }
+                    1 => { // New Game
                         self.save.reset();
                         self.chapter_state = ChapterState::new();
                         self.state = AppState::ChapterIntro { vol_idx: 0, ch_idx: 0 };
                     }
-                    1 => { // Continue
+                    2 => { // Continue
                         let vi = self.save.vol_idx.min(self.volumes.len().saturating_sub(1));
                         let ci = self.save.ch_idx.min(
                             self.volumes.get(vi).map(|v| v.chapters.len().saturating_sub(1)).unwrap_or(0)
@@ -345,6 +360,65 @@ impl App {
                 }
             }
             _ => {}
+        }
+    }
+
+    fn handle_learn_menu(&mut self, key: KeyEvent, selected: usize) {
+        let max = self.lessons.len().saturating_sub(1);
+        match key.code {
+            KeyCode::Up | KeyCode::Char('k') => {
+                self.state = AppState::LearnMenu { selected: selected.saturating_sub(1) };
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                self.state = AppState::LearnMenu { selected: (selected + 1).min(max) };
+            }
+            KeyCode::Enter | KeyCode::Char(' ') => {
+                self.sound.play(Sound::Correct);
+                self.learn_state = LearnLessonState::new();
+                self.anim.reset_level_anims();
+                self.state = AppState::LearnLesson { lesson_idx: selected, step_idx: 0 };
+            }
+            KeyCode::Esc | KeyCode::Char('q') => {
+                self.state = AppState::Menu { selected: 0 };
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_learn_lesson(&mut self, key: KeyEvent, lesson_idx: usize, step_idx: usize) {
+        let lesson = match self.lessons.get(lesson_idx) {
+            Some(l) => l.clone(),
+            None => return,
+        };
+        let step = match lesson.steps.get(step_idx) {
+            Some(s) => s.clone(),
+            None => return,
+        };
+
+        if key.code == KeyCode::Esc || key.code == KeyCode::Char('q') {
+            self.state = AppState::LearnMenu { selected: lesson_idx };
+            return;
+        }
+
+        if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') {
+            // If there's a command and we haven't shown the result yet,
+            // flip to result view and stay on this step.
+            if step.command.is_some() && !self.learn_state.showing_result {
+                self.sound.play(Sound::Correct);
+                self.learn_state.showing_result = true;
+                return;
+            }
+
+            // Otherwise advance to next step
+            self.sound.play(Sound::KeyPress);
+            let next_step = step_idx + 1;
+            if next_step < lesson.steps.len() {
+                self.learn_state = LearnLessonState::new();
+                self.state = AppState::LearnLesson { lesson_idx, step_idx: next_step };
+            } else {
+                // Lesson complete
+                self.state = AppState::LearnMenu { selected: lesson_idx };
+            }
         }
     }
 

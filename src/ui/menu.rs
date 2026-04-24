@@ -26,7 +26,7 @@ const QUEST_LOGO: &[&str] = &[
     r" ╚═════╝  ╚═════╝ ╚══════╝╚══════╝   ╚═╝   ",
 ];
 
-const MENU_ITEMS: &[&str] = &["     New Game", "     Continue", "     Quit"];
+const MENU_ITEMS: &[&str] = &["     Learn", "     New Game", "     Continue", "     Quit"];
 
 pub fn draw_menu(frame: &mut Frame, area: Rect, selected: usize, border_breathe: Color) {
     // Wide enough for QUEST logo (44 chars) + padding
