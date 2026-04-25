@@ -1,5 +1,5 @@
 // learn/lessons.rs — Learn mode lesson content for GitQuest
-// Covers Volume 1 basics: init, config, add, commit, push
+// Covers Volume 1 basics: init, config, add, commit, push, branch
 
 #[derive(Clone)]
 pub struct LessonStep {
@@ -26,6 +26,7 @@ pub fn all_lessons() -> Vec<Lesson> {
         lesson_add(),
         lesson_commit(),
         lesson_push(),
+        lesson_branch(),
     ]
 }
 
@@ -378,6 +379,91 @@ fn lesson_push() -> Lesson {
                         "            ↑            ↑                 \n",
                         "         HEAD         HEAD                 \n",
                         "  ✓ In sync!           "
+                    ),
+                ],
+            },
+        ],
+    }
+}
+
+fn lesson_branch() -> Lesson {
+    Lesson {
+        title: "The Branching Path",
+        tagline: "Work in parallel without breaking the main line.",
+        steps: &[
+            LessonStep {
+                title: "What is a branch?",
+                text: "A branch is an independent line of development. It lets you experiment, build features, or fix bugs without affecting the main codebase. 'main' is the default branch. When you create a branch, Git makes a new pointer to the current commit.",
+                command: None,
+                art_frames: &[
+                    concat!(
+                        "                       \n",
+                        "  main                 \n",
+                        "    ●──●──●            \n",
+                        "   c1 c2  c3           \n",
+                        "            ↑          \n",
+                        "         HEAD          \n",
+                        "                       \n",
+                        "  One timeline.        "
+                    ),
+                    concat!(
+                        "                       \n",
+                        "  main                 \n",
+                        "    ●──●──●──●         \n",
+                        "   c1 c2  c3  c4       \n",
+                        "               ↑       \n",
+                        "            HEAD       \n",
+                        "                       \n",
+                        "  Still one timeline.  "
+                    ),
+                    concat!(
+                        "                       \n",
+                        "  main                 \n",
+                        "    ●──●──●            \n",
+                        "   c1 c2  c3           \n",
+                        "            ↑          \n",
+                        "         HEAD          \n",
+                        "                       \n",
+                        "  Imagine two paths... "
+                    ),
+                ],
+                result_frames: &[],
+            },
+            LessonStep {
+                title: "Run the command",
+                text: "This creates a new branch called 'feature-login' that points to the current commit. HEAD stays on main until you switch branches.",
+                command: Some("git branch feature-login"),
+                art_frames: &[
+                    concat!(
+                        "                       \n",
+                        "  main                 \n",
+                        "    ●──●──●            \n",
+                        "   c1 c2  c3           \n",
+                        "            ↑          \n",
+                        "         HEAD          \n",
+                        "                       \n",
+                        "  $ git branch ...     "
+                    ),
+                ],
+                result_frames: &[
+                    concat!(
+                        "                       \n",
+                        "  main                 \n",
+                        "    ●──●──●            \n",
+                        "   c1 c2  c3           \n",
+                        "            ↑          \n",
+                        "         HEAD          \n",
+                        "                       \n",
+                        "  ✓ Branch created     "
+                    ),
+                    concat!(
+                        "  main      feature-login\n",
+                        "    ●──●──●              \n",
+                        "   c1 c2  c3             \n",
+                        "            ↑            \n",
+                        "         HEAD            \n",
+                        "                         \n",
+                        "  Both point to c3       "
                     ),
                 ],
             },
