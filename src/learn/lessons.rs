@@ -27,6 +27,11 @@ pub fn all_lessons() -> Vec<Lesson> {
         lesson_commit(),
         lesson_push(),
         lesson_branch(),
+        lesson_switch(),
+        lesson_merge(),
+        lesson_status(),
+        lesson_log(),
+        lesson_pull(),
     ]
 }
 
@@ -464,6 +469,374 @@ fn lesson_branch() -> Lesson {
                         "         HEAD            \n",
                         "                         \n",
                         "  Both point to c3       "
+                    ),
+                ],
+            },
+        ],
+    }
+}
+
+
+fn lesson_switch() -> Lesson {
+    Lesson {
+        title: "The Great Switch",
+        tagline: "Creating a branch is only half the journey.",
+        steps: &[
+            LessonStep {
+                title: "What is git switch?",
+                text: "Creating a branch doesn't move you onto it. 'git switch' moves HEAD to the target branch so your next commits happen there. It's the modern, clearer replacement for 'git checkout'.",
+                command: None,
+                art_frames: &[
+                    concat!(
+                        "  main      feature-login\n",
+                        "    ●──●──●              \n",
+                        "   c1 c2  c3             \n",
+                        "            ↑            \n",
+                        "         HEAD            \n",
+                        "                         \n",
+                        "  You're on main.        "
+                    ),
+                    concat!(
+                        "  main      feature-login\n",
+                        "    ●──●──●              \n",
+                        "   c1 c2  c3             \n",
+                        "            ↑            \n",
+                        "         HEAD            \n",
+                        "                         \n",
+                        "  Want to work there?    "
+                    ),
+                ],
+                result_frames: &[],
+            },
+            LessonStep {
+                title: "Run the command",
+                text: "This moves HEAD onto the feature-login branch. Any new commits you make now will extend that branch, not main.",
+                command: Some("git switch feature-login"),
+                art_frames: &[
+                    concat!(
+                        "  main      feature-login\n",
+                        "    ●──●──●              \n",
+                        "   c1 c2  c3             \n",
+                        "            ↑            \n",
+                        "         HEAD            \n",
+                        "                         \n",
+                        "  $ git switch ...       "
+                    ),
+                ],
+                result_frames: &[
+                    concat!(
+                        "  main      feature-login\n",
+                        "    ●──●──●              \n",
+                        "   c1 c2  c3             \n",
+                        "            ↑            \n",
+                        "                      HEAD\n",
+                        "                         \n",
+                        "  ✓ Switched             "
+                    ),
+                    concat!(
+                        "  main      feature-login\n",
+                        "    ●──●──●──●           \n",
+                        "   c1 c2  c3  c4         \n",
+                        "               ↑         \n",
+                        "                      HEAD\n",
+                        "                         \n",
+                        "  Commits go here now    "
+                    ),
+                ],
+            },
+        ],
+    }
+}
+
+fn lesson_merge() -> Lesson {
+    Lesson {
+        title: "The Merge",
+        tagline: "Bring separate paths back together.",
+        steps: &[
+            LessonStep {
+                title: "What is git merge?",
+                text: "When a feature branch is ready, you merge it back into main. Git creates a merge commit that has two parents — one from each branch — preserving the full history of both timelines.",
+                command: None,
+                art_frames: &[
+                    concat!(
+                        "  main                   \n",
+                        "    ●──●──●              \n",
+                        "   c1 c2  c3             \n",
+                        "            ↑            \n",
+                        "         HEAD            \n",
+                        "              /           \n",
+                        "               ●──●      \n",
+                        "              c4  c5     \n",
+                        "  feature-login          "
+                    ),
+                    concat!(
+                        "  main                   \n",
+                        "    ●──●──●              \n",
+                        "   c1 c2  c3             \n",
+                        "            ↑            \n",
+                        "         HEAD            \n",
+                        "              /           \n",
+                        "               ●──●      \n",
+                        "              c4  c5     \n",
+                        "  Two timelines.         "
+                    ),
+                    concat!(
+                        "  main                   \n",
+                        "    ●──●──●──●           \n",
+                        "   c1 c2  c3  m1         \n",
+                        "            ↑ /           \n",
+                        "         HEAD  ●──●      \n",
+                        "              c4  c5     \n",
+                        "  United.                "
+                    ),
+                ],
+                result_frames: &[],
+            },
+            LessonStep {
+                title: "Run the command",
+                text: "This merges feature-login into the current branch (main). The merge commit m1 now has two parents: c3 and c5.",
+                command: Some("git merge feature-login"),
+                art_frames: &[
+                    concat!(
+                        "  main                   \n",
+                        "    ●──●──●              \n",
+                        "   c1 c2  c3             \n",
+                        "            ↑            \n",
+                        "         HEAD            \n",
+                        "              /           \n",
+                        "               ●──●      \n",
+                        "              c4  c5     \n",
+                        "  $ git merge ...        "
+                    ),
+                ],
+                result_frames: &[
+                    concat!(
+                        "  main                   \n",
+                        "    ●──●──●──●           \n",
+                        "   c1 c2  c3  m1         \n",
+                        "               ↑         \n",
+                        "            HEAD         \n",
+                        "            ↑ /           \n",
+                        "             ●──●        \n",
+                        "            c4  c5       \n",
+                        "  ✓ Merged               "
+                    ),
+                    concat!(
+                        "  main                   \n",
+                        "    ●──●──●──●           \n",
+                        "   c1 c2  c3  m1         \n",
+                        "               ↑         \n",
+                        "            HEAD         \n",
+                        "            ↑ /           \n",
+                        "             ●──●        \n",
+                        "            c4  c5       \n",
+                        "  History preserved.     "
+                    ),
+                ],
+            },
+        ],
+    }
+}
+
+fn lesson_status() -> Lesson {
+    Lesson {
+        title: "The Status Check",
+        tagline: "Know what's happening before you act.",
+        steps: &[
+            LessonStep {
+                title: "What is git status?",
+                text: "'git status' tells you exactly what's going on in your repository: which files are modified, which are staged, which are untracked, and which branch you're on. It's the first command to run when you're unsure.",
+                command: None,
+                art_frames: &[
+                    concat!(
+                        "  📁 project/            \n",
+                        "  📄 index.html  [M]    \n",
+                        "  📄 styles.css  [M]    \n",
+                        "  🗑 .DS_Store   [?]    \n",
+                        "  📄 README.md   [A]    \n",
+                        "                        \n",
+                        "  What's going on?!     "
+                    ),
+                    concat!(
+                        "  On branch main         \n",
+                        "  Changes not staged:    \n",
+                        "    modified: index.html\n",
+                        "    modified: styles.css\n",
+                        "  Untracked files:       \n",
+                        "    .DS_Store            \n",
+                        "  Clarity.               "
+                    ),
+                ],
+                result_frames: &[],
+            },
+            LessonStep {
+                title: "Run the command",
+                text: "This prints the current repository state: branch name, staged changes, unstaged changes, and untracked files.",
+                command: Some("git status"),
+                art_frames: &[
+                    concat!(
+                        "  📁 project/            \n",
+                        "  📄 index.html  [M]    \n",
+                        "  📄 styles.css  [M]    \n",
+                        "  🗑 .DS_Store   [?]    \n",
+                        "                        \n",
+                        "  $ git status          "
+                    ),
+                ],
+                result_frames: &[
+                    concat!(
+                        "  On branch main         \n",
+                        "  Changes not staged:    \n",
+                        "    modified: index.html\n",
+                        "    modified: styles.css\n",
+                        "  Untracked files:       \n",
+                        "    .DS_Store            \n",
+                        "  ✓ Now you know        "
+                    ),
+                    concat!(
+                        "  On branch main         \n",
+                        "  Your branch is clean  \n",
+                        "                        \n",
+                        "  Nothing to commit     \n",
+                        "  working tree clean    \n",
+                        "                        \n",
+                        "  Peace of mind.        "
+                    ),
+                ],
+            },
+        ],
+    }
+}
+
+fn lesson_log() -> Lesson {
+    Lesson {
+        title: "The History Book",
+        tagline: "Every commit leaves a fingerprint.",
+        steps: &[
+            LessonStep {
+                title: "What is git log?",
+                text: "'git log' shows the commit history of your repository. Each entry displays the commit hash, author, date, and message. '--oneline' compresses each commit to a single line for quick scanning.",
+                command: None,
+                art_frames: &[
+                    concat!(
+                        "  main                   \n",
+                        "    ●──●──●──●           \n",
+                        "   c1 c2  c3  c4         \n",
+                        "               ↑         \n",
+                        "            HEAD         \n",
+                        "                        \n",
+                        "  What happened here?    "
+                    ),
+                    concat!(
+                        "  a1b2c3d Add navbar    \n",
+                        "  e4f5g6h Fix CSS bug   \n",
+                        "  i7j8k9l Init repo     \n",
+                        "                        \n",
+                        "  A story in commits.    "
+                    ),
+                ],
+                result_frames: &[],
+            },
+            LessonStep {
+                title: "Run the command",
+                text: "This displays the commit history in a compact one-line-per-commit format, newest first.",
+                command: Some("git log --oneline"),
+                art_frames: &[
+                    concat!(
+                        "  main                   \n",
+                        "    ●──●──●──●           \n",
+                        "   c1 c2  c3  c4         \n",
+                        "               ↑         \n",
+                        "            HEAD         \n",
+                        "                        \n",
+                        "  $ git log --oneline   "
+                    ),
+                ],
+                result_frames: &[
+                    concat!(
+                        "  a1b2c3d Add navbar    \n",
+                        "  e4f5g6h Fix CSS bug   \n",
+                        "  i7j8k9l Init repo     \n",
+                        "                        \n",
+                        "  ✓ History revealed    "
+                    ),
+                    concat!(
+                        "  a1b2c3d Add navbar    \n",
+                        "  e4f5g6h Fix CSS bug   \n",
+                        "  i7j8k9l Init repo     \n",
+                        "                        \n",
+                        "  3 commits, 3 stories.  "
+                    ),
+                ],
+            },
+        ],
+    }
+}
+
+fn lesson_pull() -> Lesson {
+    Lesson {
+        title: "The Pull",
+        tagline: "Stay in sync with the team.",
+        steps: &[
+            LessonStep {
+                title: "What is git pull?",
+                text: "'git pull' downloads new commits from the remote and merges them into your current branch. It's essentially 'git fetch' followed by 'git merge'. Use it to stay up to date before you start working.",
+                command: None,
+                art_frames: &[
+                    concat!(
+                        "  LOCAL                REMOTE              \n",
+                        "  main                 origin/main         \n",
+                        "    ●──●──●            ●──●──●──●         \n",
+                        "   c1 c2 c3            c1 c2 c3 c4        \n",
+                        "            ↑                              \n",
+                        "         HEAD                              \n",
+                        "  Remote is ahead.                        "
+                    ),
+                    concat!(
+                        "  LOCAL                REMOTE              \n",
+                        "  main                 origin/main         \n",
+                        "    ●──●──●            ●──●──●──●         \n",
+                        "   c1 c2 c3            c1 c2 c3 c4        \n",
+                        "            ↑                    ↑         \n",
+                        "         HEAD                 HEAD         \n",
+                        "  Time to catch up.                       "
+                    ),
+                ],
+                result_frames: &[],
+            },
+            LessonStep {
+                title: "Run the command",
+                text: "This fetches the latest commits from origin/main and merges them into your local main. Your local branch is now up to date.",
+                command: Some("git pull origin main"),
+                art_frames: &[
+                    concat!(
+                        "  LOCAL                REMOTE              \n",
+                        "  main                 origin/main         \n",
+                        "    ●──●──●            ●──●──●──●         \n",
+                        "   c1 c2 c3            c1 c2 c3 c4        \n",
+                        "            ↑                              \n",
+                        "         HEAD                              \n",
+                        "  $ git pull ...        "
+                    ),
+                ],
+                result_frames: &[
+                    concat!(
+                        "  LOCAL                REMOTE              \n",
+                        "  main                 origin/main         \n",
+                        "    ●──●──●──●          ●──●──●──●         \n",
+                        "   c1 c2 c3  c4         c1 c2 c3 c4        \n",
+                        "               ↑                  ↑         \n",
+                        "            HEAD               HEAD         \n",
+                        "  ✓ Caught up             "
+                    ),
+                    concat!(
+                        "  LOCAL                REMOTE              \n",
+                        "  main                 origin/main         \n",
+                        "    ●──●──●──●          ●──●──●──●         \n",
+                        "   c1 c2 c3  c4         c1 c2 c3 c4        \n",
+                        "               ↑                  ↑         \n",
+                        "            HEAD               HEAD         \n",
+                        "  In sync.               "
                     ),
                 ],
             },
