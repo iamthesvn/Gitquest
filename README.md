@@ -86,10 +86,10 @@ gives you context, and then you type the git command that solves the problem.
 
 | Character | Role | Personality |
 |-----------|------|-------------|
-| **Priya** | Senior dev / your mentor | Calm, precise, quietly rooting for you |
-| **Jordan** | Product manager | Anxious, dramatic, one deploy from a breakdown |
-| **Raj** | Senior engineer | Blunt, sarcastic, respects competence and nothing else |
-| **Marcus** | CEO | Visionary, oblivious, occasionally causes the fires he asks you to fight |
+| **Hyett** | Senior dev / your mentor | Calm, precise, quietly rooting for you |
+| **Preston** | Product manager | Anxious, dramatic, one deploy from a breakdown |
+| **Chacon** | Senior engineer | Blunt, sarcastic, respects competence and nothing else |
+| **Wanstrath** | CEO | Visionary, oblivious, occasionally causes the fires he asks you to fight |
 
 ---
 
