@@ -26,7 +26,7 @@ cargo install --path .
 gitquest
 ```
 
-Requires Rust stable (1.75+). No external dependencies — audio is synthesised at runtime, no files to bundle.
+Requires Rust stable (1.85+). No external dependencies — audio is synthesised at runtime, no files to bundle.
 
 ---
 
@@ -159,7 +159,7 @@ Each hint used costs a small XP penalty. You always earn at least 25% of the bas
 
 | | |
 |---|---|
-| Language | Rust 2021 |
+| Language | Rust 2024 |
 | TUI | [ratatui](https://github.com/ratatui/ratatui) 0.30 + crossterm 0.29 |
 | Audio | rodio 0.19 (synthesised — no bundled files) |
 | Save | serde_json + dirs |
