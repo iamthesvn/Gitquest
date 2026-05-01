@@ -411,7 +411,7 @@ fn draw_game_complete(frame: &mut Frame, app: &App, border_breathe: Color) {
     }
     lines.push(Line::from(""));
     lines.push(Line::from(Span::styled(
-        "     You survived NovaTech. Git mastered.",
+        "     You survived Halcyon. Git mastered.",
         Style::default().fg(Color::Rgb(60, 220, 100)).add_modifier(Modifier::BOLD),
     )));
     lines.push(Line::from(""));

@@ -32,7 +32,7 @@ use crate::anim::AnimState;
 /// Dark space background used throughout the screen.
 const BG: Color = Color::Rgb(10, 10, 18);
 
-/// NovaTech corporate orange — borders, accents.
+/// Halcyon corporate orange — borders, accents.
 const ACCENT: Color = Color::Rgb(255, 120, 40);
 
 /// Success / correct-answer green.

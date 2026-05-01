@@ -11,7 +11,7 @@
   ╚═════╝ ╚═╝   ╚═╝     ╚══▀▀═╝  ╚═════╝ ╚══════╝╚══════╝   ╚═╝
 ```
 
-You are **Alex Chen**, a new hire at NovaTech. Your teammates are waiting.
+You are **Alex Chen**, a new hire at Halcyon. Your teammates are waiting.
 Your laptop is blank. Production is about to break. Type the right git
 command or fall behind.
 
@@ -30,13 +30,13 @@ Requires Rust stable (1.85+). No external dependencies — audio is synthesised 
 
 ---
 
-## The story — NovaTech
+## The story — Halcyon
 
 GitQuest is structured as **4 volumes** of 5 chapters each (20 chapters total).
 Each chapter drops you into a real office scenario. A colleague briefs you,
 gives you context, and then you type the git command that solves the problem.
 
-### Volume 1 — First Day at NovaTech
+### Volume 1 — First Day at Halcyon
 *"You got the job. Now prove you deserve it."*
 
 | Ch | Title | Command |

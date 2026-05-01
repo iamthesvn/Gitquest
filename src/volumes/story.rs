@@ -1,5 +1,5 @@
 // volumes/mod.rs — GitQuest story content and chapter data
-// NovaTech saga: Alex Chen's journey from new hire to git-wielding veteran.
+// Halcyon saga: Alex Chen's journey from new hire to git-wielding veteran.
 
 #[derive(Clone)]
 pub struct Chapter {
@@ -45,13 +45,13 @@ pub fn all_volumes() -> Vec<Volume> {
 }
 
 // ===========================================================================
-// VOLUME 1 — "First Day at NovaTech"
+// VOLUME 1 — "First Day at Halcyon"
 // ===========================================================================
 
 fn volume_one() -> Volume {
     Volume {
         id: 1,
-        title: "First Day at NovaTech",
+        title: "First Day at Halcyon",
         tagline: "You got the job. Now prove you deserve it.",
         chapters: vec![
             // ---------------------------------------------------------------
@@ -62,7 +62,7 @@ fn volume_one() -> Volume {
                 scene_art: &[
                     "  ╔══════════════════════════════╗",
                     "  ║  .-----------. ☕             ║",
-                    "  ║  |  LAPTOP   |  [ NovaTech ] ║",
+                    "  ║  |  LAPTOP   |  [ Halcyon ] ║",
                     "  ║  |  _______ |               ║",
                     "  ║  | |       ||  ~/projects/  ║",
                     "  ║  | |  ???  ||  novatech     ║",
@@ -71,7 +71,7 @@ fn volume_one() -> Volume {
                 ],
                 npc_name: "Hyett",
                 npc_dialogue: &[
-                    "Hey, Alex! Welcome to NovaTech. Grab that desk — the one with the sticky note.",
+                    "Hey, Alex! Welcome to Halcyon. Grab that desk — the one with the sticky note.",
                     "First things first: your laptop doesn't have a project folder set up yet.",
                     "Every project we run lives inside a git repository. Without one, you're basically coding into the void.",
                     "Head into ~/projects/novatech and initialise a git repo so we can get you connected to the team.",
@@ -612,7 +612,7 @@ fn volume_three() -> Volume {
                 scene_art: &[
                     "  ╔═══════════════════════════════════════╗",
                     "  ║                                       ║",
-                    "  ║   🎉  NovaTech Platform  v1.0  🎉    ║",
+                    "  ║   🎉  Halcyon Platform  v1.0  🎉    ║",
                     "  ║                                       ║",
                     "  ║   main ──●──●──●──●──[ v1.0 ]        ║",
                     "  ║                          ▲            ║",
