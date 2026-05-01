@@ -82,6 +82,25 @@ gives you context, and then you type the git command that solves the problem.
 
 ---
 
+## Why this structure?
+
+Most Git tutorials fall into one of two traps: **dry reference docs** that list flags in alphabetical order, or **contrived examples** (`git add file.txt`) with no stakes and no memory. You read them, nod, and forget everything the moment a real merge conflict explodes across your terminal.
+
+GitQuest was built on three beliefs:
+
+**1. Context beats syntax.**  
+You don't learn `git revert` by reading its man page. You learn it when production is down, your CEO is in the Slack channel, and someone just pushed a broken commit. The 20 chapters are real office scenarios with real characters because that's how human memory works — we remember stories, not bullet points.
+
+**2. The terminal is the classroom.**  
+Git is a terminal tool. Teaching it inside a browser with clickable buttons teaches you to click buttons, not to type commands under pressure. GitQuest runs in your terminal because that's where you'll actually use Git.
+
+**3. Scaffolding, not spoon-feeding.**  
+The 3-tier hint system exists because getting stuck is frustrating, but being told the answer is useless. Hints cost XP because learning happens in the gap between "I don't know" and "I figured it out." The Learn mode exists for the same reason — watch the concept first, then solve the problem.
+
+The four volumes mirror how Git knowledge actually accumulates in a real job: init → config → add → commit → push on day one, then branches, stashes, reverts, and merge conflicts once the codebase catches fire.
+
+---
+
 ## The cast
 
 | Character | Role | Personality |
