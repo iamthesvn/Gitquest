@@ -171,6 +171,8 @@ pub enum AppState {
     VolumeComplete { vol_idx: usize },
     /// All volumes done
     GameComplete,
+    /// Gitlings mode (rustlings-style real git execution)
+    ComingSoon,
     Quit,
 }
 
@@ -322,6 +324,7 @@ impl App {
             AppState::ChapterComplete { vol_idx, ch_idx, .. } => self.handle_chapter_complete(key, vol_idx, ch_idx),
             AppState::VolumeComplete { vol_idx } => self.handle_volume_complete(key, vol_idx),
             AppState::GameComplete => self.handle_game_complete(key),
+            AppState::ComingSoon => self.handle_coming_soon(key),
             AppState::Transition { .. } => {} // no keys during transition
             AppState::Quit => {}
         }
@@ -334,7 +337,7 @@ impl App {
                 self.state = AppState::Menu { selected: s };
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                let s = (selected + 1).min(3);
+                let s = (selected + 1).min(4);
                 self.state = AppState::Menu { selected: s };
             }
             KeyCode::Enter | KeyCode::Char(' ') => {
@@ -343,12 +346,16 @@ impl App {
                     0 => { // Learn
                         self.state = AppState::LearnMenu { selected: 0 };
                     }
-                    1 => { // New Game
+                    1 => { // Gitlings
+                        self.sound.play(Sound::Correct);
+                        self.state = AppState::ComingSoon;
+                    }
+                    2 => { // New Game
                         self.save.reset();
                         self.chapter_state = ChapterState::new();
                         self.state = AppState::ChapterIntro { vol_idx: 0, ch_idx: 0 };
                     }
-                    2 => { // Continue
+                    3 => { // Continue
                         let vi = self.save.vol_idx.min(self.volumes.len().saturating_sub(1));
                         let ci = self.save.ch_idx.min(
                             self.volumes.get(vi).map(|v| v.chapters.len().saturating_sub(1)).unwrap_or(0)
@@ -588,6 +595,13 @@ impl App {
 
     fn handle_game_complete(&mut self, key: KeyEvent) {
         if key.code == KeyCode::Enter || key.code == KeyCode::Char('q') {
+            self.state = AppState::Menu { selected: 0 };
+        }
+    }
+
+    fn handle_coming_soon(&mut self, key: KeyEvent) {
+        if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') || key.code == KeyCode::Esc || key.code == KeyCode::Char('q') {
+            self.sound.play(Sound::KeyPress);
             self.state = AppState::Menu { selected: 0 };
         }
     }
