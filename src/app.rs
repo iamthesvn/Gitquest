@@ -157,6 +157,8 @@ pub enum AppState {
     LearnMenu { selected: usize },
     /// Learn mode lesson
     LearnLesson { lesson_idx: usize, step_idx: usize },
+    /// Game submenu (New Game / Continue)
+    GameMenu { selected: usize },
     /// Volume selection screen
     VolumeSelect { selected: usize },
     /// Full-screen chapter intro — shows volume + chapter title, NPC first line, press Enter
@@ -323,6 +325,7 @@ impl App {
             AppState::Playing { vol_idx, ch_idx } => self.handle_playing(key, vol_idx, ch_idx),
             AppState::ChapterComplete { vol_idx, ch_idx, .. } => self.handle_chapter_complete(key, vol_idx, ch_idx),
             AppState::VolumeComplete { vol_idx } => self.handle_volume_complete(key, vol_idx),
+            AppState::GameMenu { selected } => self.handle_game_menu(key, selected),
             AppState::GameComplete => self.handle_game_complete(key),
             AppState::ComingSoon => self.handle_coming_soon(key),
             AppState::Transition { .. } => {} // no keys during transition
@@ -337,7 +340,7 @@ impl App {
                 self.state = AppState::Menu { selected: s };
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                let s = (selected + 1).min(4);
+                let s = (selected + 1).min(3);
                 self.state = AppState::Menu { selected: s };
             }
             KeyCode::Enter | KeyCode::Char(' ') => {
@@ -346,16 +349,38 @@ impl App {
                     0 => { // Learn
                         self.state = AppState::LearnMenu { selected: 0 };
                     }
-                    1 => { // Gitlings
+                    1 => { // Game
+                        self.sound.play(Sound::Correct);
+                        self.state = AppState::GameMenu { selected: 0 };
+                    }
+                    2 => { // Gitlings
                         self.sound.play(Sound::Correct);
                         self.state = AppState::ComingSoon;
                     }
-                    2 => { // New Game
+                    _ => self.state = AppState::Quit,
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_game_menu(&mut self, key: KeyEvent, selected: usize) {
+        match key.code {
+            KeyCode::Up | KeyCode::Char('k') => {
+                self.state = AppState::GameMenu { selected: selected.saturating_sub(1) };
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                self.state = AppState::GameMenu { selected: (selected + 1).min(2) };
+            }
+            KeyCode::Enter | KeyCode::Char(' ') => {
+                self.sound.play(Sound::Correct);
+                match selected {
+                    0 => { // New Game
                         self.save.reset();
                         self.chapter_state = ChapterState::new();
                         self.state = AppState::ChapterIntro { vol_idx: 0, ch_idx: 0 };
                     }
-                    3 => { // Continue
+                    1 => { // Continue
                         let vi = self.save.vol_idx.min(self.volumes.len().saturating_sub(1));
                         let ci = self.save.ch_idx.min(
                             self.volumes.get(vi).map(|v| v.chapters.len().saturating_sub(1)).unwrap_or(0)
@@ -363,8 +388,13 @@ impl App {
                         self.chapter_state = ChapterState::new();
                         self.state = AppState::ChapterIntro { vol_idx: vi, ch_idx: ci };
                     }
-                    _ => self.state = AppState::Quit,
+                    _ => { // Back
+                        self.state = AppState::Menu { selected: 1 };
+                    }
                 }
+            }
+            KeyCode::Esc | KeyCode::Char('q') => {
+                self.state = AppState::Menu { selected: 1 };
             }
             _ => {}
         }
