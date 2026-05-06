@@ -61,6 +61,9 @@ pub fn draw(frame: &mut Frame, app: &App) {
         AppState::GameComplete => {
             draw_game_complete(frame, app, *app.anim.border_breathe);
         }
+        AppState::ComingSoon => {
+            draw_coming_soon(frame, app);
+        }
         AppState::Quit => {}
     }
 
@@ -391,6 +394,71 @@ const TROPHY: &[&str] = &[
     r"        _.' '._        ",
     r"       '-------'       ",
 ];
+
+fn draw_coming_soon(frame: &mut Frame, _app: &App) {
+    let area = frame.area();
+
+    let centered = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Fill(1), Constraint::Length(50), Constraint::Fill(1)])
+        .split(area);
+    let centered = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Fill(1), Constraint::Length(14), Constraint::Fill(1)])
+        .split(centered[1]);
+    let box_area = centered[1];
+
+    let mut lines: Vec<Line> = vec![Line::from("")];
+
+    lines.push(Line::from(Span::styled(
+        "     🚧  Coming Soon",
+        Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "     Gitlings — a rustlings-style mode",
+        Style::default().fg(Color::Rgb(200, 200, 200)),
+    )));
+    lines.push(Line::from(Span::styled(
+        "     where real git commands run in isolated",
+        Style::default().fg(Color::Rgb(200, 200, 200)),
+    )));
+    lines.push(Line::from(Span::styled(
+        "     sandboxes and verify scripts check your",
+        Style::default().fg(Color::Rgb(200, 200, 200)),
+    )));
+    lines.push(Line::from(Span::styled(
+        "     work. No string matching. Just real git.",
+        Style::default().fg(Color::Rgb(200, 200, 200)),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "     Watch this space.",
+        Style::default().fg(Color::Rgb(140, 140, 140)).add_modifier(Modifier::ITALIC),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "     [Enter / Esc] Back to menu",
+        Style::default().fg(Color::DarkGray),
+    )));
+
+    let bg = Paragraph::new("").style(Style::default().bg(BG));
+    frame.render_widget(bg, area);
+
+    let p = Paragraph::new(lines)
+        .style(Style::default().bg(BG))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(ACCENT))
+                .title(Span::styled(
+                    " GitQuest — Gitlings ",
+                    Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+                ))
+                .title_alignment(Alignment::Center),
+        );
+    frame.render_widget(p, box_area);
+}
 
 fn draw_game_complete(frame: &mut Frame, app: &App, border_breathe: Color) {
     let area = frame.area();
