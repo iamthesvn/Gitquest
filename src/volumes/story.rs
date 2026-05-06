@@ -1,6 +1,8 @@
 // volumes/mod.rs — GitQuest story content and chapter data
 // Halcyon saga: Alex Chen's journey from new hire to git-wielding veteran.
 
+use crate::git_sandbox::GitSandbox;
+
 #[derive(Clone)]
 pub struct Chapter {
     pub title: &'static str,
@@ -12,6 +14,10 @@ pub struct Chapter {
     pub hints: &'static [&'static str],
     pub success_message: &'static str,
     pub xp: u32,
+    /// Optional sandbox setup run when the chapter starts.
+    pub sandbox_setup: Option<fn(&mut GitSandbox)>,
+    /// Optional sandbox verification run after the player's command.
+    pub sandbox_verify: Option<fn(&GitSandbox) -> bool>,
 }
 
 #[derive(Clone)]
@@ -20,6 +26,15 @@ pub struct Volume {
     pub title: &'static str,
     pub tagline: &'static str,
     pub chapters: Vec<Chapter>,
+}
+
+// ---------------------------------------------------------------------------
+// SANDBOX SETUP / VERIFY HELPERS
+// ---------------------------------------------------------------------------
+
+fn setup_empty(_sb: &mut GitSandbox) {}
+fn verify_init(sb: &GitSandbox) -> bool {
+    sb.exists(".git")
 }
 
 // ---------------------------------------------------------------------------
@@ -88,6 +103,8 @@ fn volume_one() -> Volume {
                 ],
                 success_message: "Repository initialised! A .git folder appears. Hyett gives you a nod of approval.",
                 xp: 10,
+                sandbox_setup: Some(setup_empty),
+                sandbox_verify: Some(verify_init),
             },
 
             // ---------------------------------------------------------------
@@ -126,6 +143,8 @@ fn volume_one() -> Volume {
                 ],
                 success_message: "Identity saved! Your commits will now proudly carry your name. Hyett checks the log and smiles.",
                 xp: 10,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -166,6 +185,8 @@ fn volume_one() -> Volume {
                 ],
                 success_message: "Files staged! Preston exhales audibly. 'Okay. Okay we're fine. We're totally fine.'",
                 xp: 10,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -211,6 +232,8 @@ fn volume_one() -> Volume {
                 ],
                 success_message: "Committed! Hyett reads the message and nods. 'Clean. That's how it's done, Alex.'",
                 xp: 15,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -248,6 +271,8 @@ fn volume_one() -> Volume {
                 ],
                 success_message: "Pushed! Wanstrath refreshes the GitHub page and pumps his fist. 'Beautiful. The future is now.'",
                 xp: 15,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
         ],
     }
@@ -297,6 +322,8 @@ fn volume_two() -> Volume {
                 ],
                 success_message: "Branch 'hotfix' created and checked out. Hyett: 'Good. Now we work fast.'",
                 xp: 20,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -333,6 +360,8 @@ fn volume_two() -> Volume {
                 ],
                 success_message: "Changes stashed! Your WIP is safely tucked away. You switch to hotfix, clean slate.",
                 xp: 20,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -372,6 +401,8 @@ fn volume_two() -> Volume {
                 ],
                 success_message: "Log printed. Chacon leans in, squinting. 'There. That commit. 47 minutes ago. Who is jd_pm??'",
                 xp: 20,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -408,6 +439,8 @@ fn volume_two() -> Volume {
                 ],
                 success_message: "Reverted! A new commit appears, neatly undoing the damage. Chacon: 'Not bad. Prod is recovering.'",
                 xp: 25,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -444,6 +477,8 @@ fn volume_two() -> Volume {
                 ],
                 success_message: "Merged! The monitors flip to green. The office erupts. Preston cries a little. Hyett quietly saves the day.",
                 xp: 25,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
         ],
     }
@@ -493,6 +528,8 @@ fn volume_three() -> Volume {
                 ],
                 success_message: "Pulled. Conflict markers appear in README.md. Chacon crosses his arms. 'Now the real work begins.'",
                 xp: 30,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -529,6 +566,8 @@ fn volume_three() -> Volume {
                 ],
                 success_message: "Output scrolls. Wanstrath squints at the screen. 'Huh. I... didn't expect that name.' An awkward silence falls.",
                 xp: 30,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -565,6 +604,8 @@ fn volume_three() -> Volume {
                 ],
                 success_message: "Cherry-picked! The auth fix lands cleanly on main. Hyett: 'Surgical. That's exactly how you do it.'",
                 xp: 35,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -602,6 +643,8 @@ fn volume_three() -> Volume {
                 ],
                 success_message: "Branch deleted. Chacon exhales slowly. 'One down, five to go. Baby steps, Alex. Baby steps.'",
                 xp: 30,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -641,6 +684,8 @@ fn volume_three() -> Volume {
                 ],
                 success_message: "Tagged! v1.0 is immortalised in the git history. Wanstrath pops a bottle of sparkling water. 'To the future!'",
                 xp: 35,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
         ],
     }
@@ -691,6 +736,8 @@ fn volume_four() -> Volume {
                 ],
                 success_message: "Diff scrolls up. Hyett squints. 'Okay... that actually looks sensible. One small win for sleep-deprived engineers.'",
                 xp: 30,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -729,6 +776,8 @@ fn volume_four() -> Volume {
                 ],
                 success_message: "The staged diff reveals the test key. Hyett: 'Unstage that. Fix it. Then commit. Sleep can wait five more minutes.'",
                 xp: 30,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -767,6 +816,8 @@ fn volume_four() -> Volume {
                 ],
                 success_message: "The stats pop up. Chacon nods slowly. 'Five files, mostly README. Okay. I can live with that.'",
                 xp: 35,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -804,6 +855,8 @@ fn volume_four() -> Volume {
                 ],
                 success_message: "A clean list of five files. Preston copies it into a spreadsheet. 'Beautiful. No crying today.'",
                 xp: 35,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
 
             // ---------------------------------------------------------------
@@ -841,6 +894,8 @@ fn volume_four() -> Volume {
                 ],
                 success_message: "The auditor checks her list. Wanstrath whispers, 'She smiled. I have never seen her smile.' Victory.",
                 xp: 40,
+    sandbox_setup: None,
+    sandbox_verify: None,
             },
         ],
     }

@@ -1,6 +1,7 @@
 mod anim;
 mod app;
 mod audio;
+mod git_sandbox;
 mod learn;
 mod ui;
 mod volumes;

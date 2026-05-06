@@ -446,6 +446,15 @@ impl App {
         if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') {
             self.sound.play(Sound::KeyPress);
             self.chapter_state = ChapterState::new();
+
+            // Initialise sandbox if this chapter uses one
+            if let Some(ch) = self.current_chapter(vol_idx, ch_idx) {
+                if let Some(setup) = ch.sandbox_setup {
+                    self.chapter_state.sandbox_setup = Some(setup);
+                    self.chapter_state.reset_sandbox();
+                }
+            }
+
             self.state = AppState::Playing { vol_idx, ch_idx };
         }
         if key.code == KeyCode::Esc || key.code == KeyCode::Char('q') {
@@ -484,12 +493,7 @@ impl App {
                 let input = self.chapter_state.input.trim().to_string();
                 self.chapter_state.attempts += 1;
 
-                let correct = chapter.accepted_answers.iter().any(|a| {
-                    // Flexible matching: lowercase, collapse spaces
-                    let norm_input: String = input.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
-                    let norm_ans: String = a.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
-                    norm_input == norm_ans
-                });
+                let correct = self.verify_command(&chapter, &input);
 
                 if correct {
                     // Score: base xp, -1 per extra attempt, -1 per hint revealed
@@ -509,11 +513,39 @@ impl App {
                     self.sound.play(Sound::Error);
                     self.chapter_state.flash_wrong = 6;
                     self.chapter_state.input.clear();
+                    // Reset sandbox so the next attempt starts clean
+                    self.chapter_state.reset_sandbox();
                 }
             }
             KeyCode::Char(c) => { self.chapter_state.input.push(c); }
             _ => {}
         }
+    }
+
+    /// Verify a player command. Uses the sandbox if the chapter provides one,
+    /// otherwise falls back to string matching against accepted_answers.
+    fn verify_command(&mut self, chapter: &Chapter, input: &str) -> bool {
+        // Sandbox path
+        if let Some(ref sb) = self.chapter_state.sandbox {
+            if let Some(verify) = chapter.sandbox_verify {
+                // Safety: only allow git commands in the sandbox
+                if !input.starts_with("git ") {
+                    return false;
+                }
+                let (_, _, code) = sb.sh(input);
+                if code != 0 {
+                    return false;
+                }
+                return verify(sb);
+            }
+        }
+
+        // Fallback: string matching
+        chapter.accepted_answers.iter().any(|a| {
+            let norm_input: String = input.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
+            let norm_ans: String = a.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
+            norm_input == norm_ans
+        })
     }
 
     fn handle_chapter_complete(&mut self, _key: KeyEvent, vol_idx: usize, ch_idx: usize) {
