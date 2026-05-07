@@ -28,6 +28,13 @@ const QUEST_LOGO: &[&str] = &[
 
 const MENU_ITEMS: &[&str] = &["     Learn", "     Game", "     Gitlings", "     Quit"];
 
+const MENU_DESCRIPTIONS: &[&str] = &[
+    "Guided lessons that show what each git command does. No typing needed.",
+    "Play through the Halcyon saga. Solve real git scenarios to advance.",
+    "Hands-on exercises. Type real git commands in isolated sandboxes.",
+    "Exit GitQuest. Your progress is saved automatically.",
+];
+
 pub fn draw_menu(frame: &mut Frame, area: Rect, selected: usize, border_breathe: Color) {
     // Wide enough for QUEST logo (44 chars) + padding
     let horizontal = Layout::default()
@@ -95,14 +102,18 @@ pub fn draw_menu(frame: &mut Frame, area: Rect, selected: usize, border_breathe:
     }
 
     lines.push(Line::from(""));
-    lines.push(Line::from(""));
 
-    lines.push(Line::from(Span::styled(
-        "   Learn Git. One command at a time.",
-        Style::default()
-            .fg(Color::DarkGray)
-            .add_modifier(Modifier::ITALIC),
-    )));
+    // Dynamic description for the selected item
+    let desc = MENU_DESCRIPTIONS.get(selected).unwrap_or(&"");
+    let wrapped = wrap_text(desc, 48);
+    for line in wrapped {
+        lines.push(Line::from(Span::styled(
+            format!("   {}", line),
+            Style::default()
+                .fg(Color::Rgb(140, 140, 140))
+                .add_modifier(Modifier::ITALIC),
+        )));
+    }
 
     lines.push(Line::from(""));
 
@@ -132,4 +143,26 @@ pub fn draw_menu(frame: &mut Frame, area: Rect, selected: usize, border_breathe:
     let bg = Paragraph::new("").style(Style::default().bg(Color::Rgb(10, 10, 15)));
     frame.render_widget(bg, area);
     frame.render_widget(menu, menu_area);
+}
+
+/// Simple word-wrap helper for descriptions.
+fn wrap_text(text: &str, width: usize) -> Vec<String> {
+    let mut result = Vec::new();
+    let words: Vec<&str> = text.split_whitespace().collect();
+    let mut current = String::new();
+    for word in words {
+        if current.len() + word.len() + 1 > width {
+            result.push(current.trim().to_string());
+            current = word.to_string();
+        } else {
+            if !current.is_empty() {
+                current.push(' ');
+            }
+            current.push_str(word);
+        }
+    }
+    if !current.is_empty() {
+        result.push(current.trim().to_string());
+    }
+    result
 }

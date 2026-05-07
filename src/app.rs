@@ -323,7 +323,7 @@ impl App {
             return;
         }
         // Global: M toggles music (except when typing in Playing or LearnLesson)
-        let is_typing = matches!(&self.state, AppState::Playing { .. } | AppState::LearnLesson { .. });
+        let is_typing = matches!(&self.state, AppState::Playing { .. } | AppState::LearnLesson { .. } | AppState::GitlingsExercise { .. });
         if !is_typing && (key.code == KeyCode::Char('m') || key.code == KeyCode::Char('M')) {
             self.toggle_mute();
             return;
@@ -349,13 +349,14 @@ impl App {
     }
 
     fn handle_menu(&mut self, key: KeyEvent, selected: usize) {
+        let max = 3;
         match key.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                let s = selected.saturating_sub(1);
+                let s = selected.checked_sub(1).unwrap_or(max);
                 self.state = AppState::Menu { selected: s };
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                let s = (selected + 1).min(3);
+                let s = (selected + 1) % (max + 1);
                 self.state = AppState::Menu { selected: s };
             }
             KeyCode::Enter | KeyCode::Char(' ') => {
@@ -381,12 +382,15 @@ impl App {
     }
 
     fn handle_game_menu(&mut self, key: KeyEvent, selected: usize) {
+        let max = 2;
         match key.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                self.state = AppState::GameMenu { selected: selected.saturating_sub(1) };
+                let s = selected.checked_sub(1).unwrap_or(max);
+                self.state = AppState::GameMenu { selected: s };
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                self.state = AppState::GameMenu { selected: (selected + 1).min(2) };
+                let s = (selected + 1) % (max + 1);
+                self.state = AppState::GameMenu { selected: s };
             }
             KeyCode::Enter | KeyCode::Char(' ') => {
                 self.sound.play(Sound::Correct);
@@ -420,10 +424,12 @@ impl App {
         let max = self.lessons.len().saturating_sub(1);
         match key.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                self.state = AppState::LearnMenu { selected: selected.saturating_sub(1) };
+                let s = selected.checked_sub(1).unwrap_or(max);
+                self.state = AppState::LearnMenu { selected: s };
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                self.state = AppState::LearnMenu { selected: (selected + 1).min(max) };
+                let s = (selected + 1) % (max + 1);
+                self.state = AppState::LearnMenu { selected: s };
             }
             KeyCode::Enter | KeyCode::Char(' ') => {
                 self.sound.play(Sound::Correct);
@@ -649,10 +655,12 @@ impl App {
         let max = self.gitlings_exercises.len().saturating_sub(1);
         match key.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                self.state = AppState::GitlingsMenu { selected: selected.saturating_sub(1) };
+                let s = selected.checked_sub(1).unwrap_or(max);
+                self.state = AppState::GitlingsMenu { selected: s };
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                self.state = AppState::GitlingsMenu { selected: (selected + 1).min(max) };
+                let s = (selected + 1) % (max + 1);
+                self.state = AppState::GitlingsMenu { selected: s };
             }
             KeyCode::Enter | KeyCode::Char(' ') => {
                 self.sound.play(Sound::Correct);
@@ -707,6 +715,19 @@ impl App {
                     self.gitlings_state.output_is_error = true;
                     self.gitlings_state.input.clear();
                     return;
+                }
+
+                // Initialise sandbox lazily if missing (e.g. after advancing from prev exercise)
+                if self.gitlings_state.sandbox.is_none() {
+                    if let Ok(mut sb) = GitSandbox::new() {
+                        (ex.setup)(&mut sb);
+                        self.gitlings_state.sandbox = Some(sb);
+                    } else {
+                        self.sound.play(Sound::Error);
+                        self.gitlings_state.output = "Failed to create exercise sandbox.".to_string();
+                        self.gitlings_state.output_is_error = true;
+                        return;
+                    }
                 }
 
                 // Run command in sandbox
