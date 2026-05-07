@@ -15,6 +15,8 @@ use tui_overlay::{Easing, OverlayState};
 use crate::{
     anim::AnimState,
     audio::{MusicPlayer, Sound, SoundManager},
+    git_sandbox::GitSandbox,
+    gitlings::{all_exercises, Exercise, GitlingsExerciseState},
     learn::{all_lessons, Lesson},
     ui,
     volumes::{all_volumes, rank_title, Chapter, Volume},
@@ -171,7 +173,12 @@ pub enum AppState {
     VolumeComplete { vol_idx: usize },
     /// All volumes done
     GameComplete,
-    /// Gitlings mode (rustlings-style real git execution)
+    /// Gitlings exercise menu
+    GitlingsMenu { selected: usize },
+    /// Gitlings active exercise
+    GitlingsExercise { ex_idx: usize },
+    /// Gitlings mode placeholder (retained for future use)
+    #[allow(dead_code)]
     ComingSoon,
     Quit,
 }
@@ -187,6 +194,9 @@ pub struct App {
     pub lessons: Vec<Lesson>,
     pub chapter_state: ChapterState,
     pub learn_state: LearnLessonState,
+    pub gitlings_exercises: Vec<Exercise>,
+    pub gitlings_state: GitlingsExerciseState,
+    pub gitlings_progress: Vec<bool>,
     pub anim: AnimState,
     pub anim_tick: usize,
     pub toast: Toast,
@@ -205,8 +215,11 @@ impl App {
             music: MusicPlayer::new(),
             volumes: all_volumes(),
             lessons: all_lessons(),
+            gitlings_exercises: all_exercises(),
             chapter_state: ChapterState::new(),
             learn_state: LearnLessonState::new(),
+            gitlings_state: GitlingsExerciseState::new(),
+            gitlings_progress: Vec::new(),
             anim: AnimState::init(),
             anim_tick: 0,
             toast: Toast::new(),
@@ -324,6 +337,8 @@ impl App {
             AppState::ChapterComplete { vol_idx, ch_idx, .. } => self.handle_chapter_complete(key, vol_idx, ch_idx),
             AppState::VolumeComplete { vol_idx } => self.handle_volume_complete(key, vol_idx),
             AppState::GameComplete => self.handle_game_complete(key),
+            AppState::GitlingsMenu { selected } => self.handle_gitlings_menu(key, selected),
+            AppState::GitlingsExercise { ex_idx } => self.handle_gitlings_exercise(key, ex_idx),
             AppState::ComingSoon => self.handle_coming_soon(key),
             AppState::Transition { .. } => {} // no keys during transition
             AppState::Quit => {}
@@ -348,7 +363,8 @@ impl App {
                     }
                     1 => { // Gitlings
                         self.sound.play(Sound::Correct);
-                        self.state = AppState::ComingSoon;
+                        self.gitlings_progress.resize(self.gitlings_exercises.len(), false);
+                        self.state = AppState::GitlingsMenu { selected: 0 };
                     }
                     2 => { // New Game
                         self.save.reset();
@@ -596,6 +612,100 @@ impl App {
     fn handle_game_complete(&mut self, key: KeyEvent) {
         if key.code == KeyCode::Enter || key.code == KeyCode::Char('q') {
             self.state = AppState::Menu { selected: 0 };
+        }
+    }
+
+    fn handle_gitlings_menu(&mut self, key: KeyEvent, selected: usize) {
+        let max = self.gitlings_exercises.len().saturating_sub(1);
+        match key.code {
+            KeyCode::Up | KeyCode::Char('k') => {
+                self.state = AppState::GitlingsMenu { selected: selected.saturating_sub(1) };
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                self.state = AppState::GitlingsMenu { selected: (selected + 1).min(max) };
+            }
+            KeyCode::Enter | KeyCode::Char(' ') => {
+                self.sound.play(Sound::Correct);
+                self.gitlings_state = GitlingsExerciseState::new();
+                if let Some(ex) = self.gitlings_exercises.get(selected) {
+                    if let Ok(mut sb) = GitSandbox::new() {
+                        (ex.setup)(&mut sb);
+                        self.gitlings_state.sandbox = Some(sb);
+                    }
+                }
+                self.state = AppState::GitlingsExercise { ex_idx: selected };
+            }
+            KeyCode::Esc | KeyCode::Char('q') => {
+                self.state = AppState::Menu { selected: 0 };
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_gitlings_exercise(&mut self, key: KeyEvent, ex_idx: usize) {
+        let ex = match self.gitlings_exercises.get(ex_idx) {
+            Some(e) => e,
+            None => return,
+        };
+
+        if key.code == KeyCode::Esc || key.code == KeyCode::Char('q') {
+            self.state = AppState::GitlingsMenu { selected: ex_idx };
+            return;
+        }
+
+        if self.gitlings_state.completed {
+            if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') {
+                self.sound.play(Sound::KeyPress);
+                let next = ex_idx + 1;
+                if next < self.gitlings_exercises.len() {
+                    self.gitlings_state = GitlingsExerciseState::new();
+                    self.state = AppState::GitlingsExercise { ex_idx: next };
+                } else {
+                    self.state = AppState::GitlingsMenu { selected: ex_idx };
+                }
+            }
+            return;
+        }
+
+        match key.code {
+            KeyCode::Backspace => { self.gitlings_state.input.pop(); }
+            KeyCode::Enter => {
+                let input = self.gitlings_state.input.trim().to_string();
+                if !input.starts_with("git ") {
+                    self.sound.play(Sound::Error);
+                    self.gitlings_state.output = "Commands must start with 'git'.".to_string();
+                    self.gitlings_state.output_is_error = true;
+                    self.gitlings_state.input.clear();
+                    return;
+                }
+
+                // Run command in sandbox
+                if let Some(ref sb) = self.gitlings_state.sandbox {
+                    let (out, err, code) = sb.sh(&input);
+                    let output = if code != 0 {
+                        self.gitlings_state.output_is_error = true;
+                        if err.is_empty() { out } else { err }
+                    } else {
+                        self.gitlings_state.output_is_error = false;
+                        if out.is_empty() { "(no output)".to_string() } else { out }
+                    };
+                    self.gitlings_state.output = output;
+
+                    let verify = ex.verify;
+                    if code == 0 && verify(sb) {
+                        self.sound.play(Sound::LevelComplete);
+                        self.gitlings_state.completed = true;
+                        if ex_idx < self.gitlings_progress.len() {
+                            self.gitlings_progress[ex_idx] = true;
+                        }
+                    } else {
+                        self.sound.play(Sound::Error);
+                        self.gitlings_state.input.clear();
+                    }
+                }
+            }
+            KeyCode::Char(c) => { self.gitlings_state.input.push(c); }
+            _ => {}
         }
     }
 
