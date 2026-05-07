@@ -28,10 +28,40 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
 
     let vertical = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Fill(1), Constraint::Length(24), Constraint::Fill(1)])
+        .constraints([Constraint::Length(1), Constraint::Min(1), Constraint::Length(1)])
         .split(horizontal[1]);
 
     let menu_area = vertical[1];
+    let inner_height = menu_area.height.saturating_sub(2); // minus top/bottom borders
+
+    const HEADER_LINES: u16 = 4;
+    const FOOTER_LINES: u16 = 1;
+    const LESSON_BLOCK: u16 = 3; // title + tagline + blank
+
+    let content_height = inner_height.saturating_sub(HEADER_LINES + FOOTER_LINES);
+    let total_blocks = lessons.len() as u16;
+
+    let (max_blocks, needs_scroll) = if total_blocks * LESSON_BLOCK <= content_height {
+        (total_blocks, false)
+    } else {
+        let mb = content_height.saturating_sub(2) / LESSON_BLOCK;
+        (mb.max(1), true)
+    };
+
+    let scroll = if !needs_scroll {
+        0
+    } else {
+        let half = (max_blocks / 2) as usize;
+        if selected <= half {
+            0
+        } else if selected >= lessons.len() - half {
+            lessons.len() - max_blocks as usize
+        } else {
+            selected - half
+        }
+    };
+
+    let end = (scroll + max_blocks as usize).min(lessons.len());
 
     let mut lines: Vec<Line> = vec![
         Line::from(""),
@@ -46,7 +76,15 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
         Line::from(""),
     ];
 
-    for (i, lesson) in lessons.iter().enumerate() {
+    if needs_scroll && scroll > 0 {
+        lines.push(Line::from(Span::styled(
+            "  ▲ ...",
+            Style::default().fg(Color::Rgb(100, 100, 100)),
+        )));
+    }
+
+    for i in scroll..end {
+        let lesson = &lessons[i];
         let is_selected = i == selected;
         let marker = if is_selected { "▶ " } else { "  " };
         let style = if is_selected {
@@ -63,6 +101,13 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
             Style::default().fg(Color::Rgb(100, 100, 100)),
         )));
         lines.push(Line::from(""));
+    }
+
+    if needs_scroll && end < lessons.len() {
+        lines.push(Line::from(Span::styled(
+            "  ▼ ...",
+            Style::default().fg(Color::Rgb(100, 100, 100)),
+        )));
     }
 
     lines.push(Line::from(Span::styled(

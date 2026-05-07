@@ -334,13 +334,14 @@ impl App {
     }
 
     fn handle_menu(&mut self, key: KeyEvent, selected: usize) {
+        let max = 3;
         match key.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                let s = selected.saturating_sub(1);
+                let s = selected.checked_sub(1).unwrap_or(max);
                 self.state = AppState::Menu { selected: s };
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                let s = (selected + 1).min(3);
+                let s = (selected + 1) % (max + 1);
                 self.state = AppState::Menu { selected: s };
             }
             KeyCode::Enter | KeyCode::Char(' ') => {
@@ -365,12 +366,15 @@ impl App {
     }
 
     fn handle_game_menu(&mut self, key: KeyEvent, selected: usize) {
+        let max = 2;
         match key.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                self.state = AppState::GameMenu { selected: selected.saturating_sub(1) };
+                let s = selected.checked_sub(1).unwrap_or(max);
+                self.state = AppState::GameMenu { selected: s };
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                self.state = AppState::GameMenu { selected: (selected + 1).min(2) };
+                let s = (selected + 1) % (max + 1);
+                self.state = AppState::GameMenu { selected: s };
             }
             KeyCode::Enter | KeyCode::Char(' ') => {
                 self.sound.play(Sound::Correct);
@@ -404,10 +408,12 @@ impl App {
         let max = self.lessons.len().saturating_sub(1);
         match key.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                self.state = AppState::LearnMenu { selected: selected.saturating_sub(1) };
+                let s = selected.checked_sub(1).unwrap_or(max);
+                self.state = AppState::LearnMenu { selected: s };
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                self.state = AppState::LearnMenu { selected: (selected + 1).min(max) };
+                let s = (selected + 1) % (max + 1);
+                self.state = AppState::LearnMenu { selected: s };
             }
             KeyCode::Enter | KeyCode::Char(' ') => {
                 self.sound.play(Sound::Correct);
