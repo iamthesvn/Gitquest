@@ -34,6 +34,7 @@ pub struct SaveData {
     pub ch_idx: usize,    // 0-based index into current volume's chapters
     pub total_xp: u32,
     pub xp_per_chapter: Vec<Vec<u32>>, // [vol][ch]
+    pub gitlings_progress: Vec<bool>,  // completed status per exercise
 }
 
 fn save_path() -> Option<std::path::PathBuf> {
@@ -60,11 +61,15 @@ impl SaveData {
                                 .collect()
                         })
                         .unwrap_or_default();
-                    return Self { vol_idx, ch_idx, total_xp, xp_per_chapter };
+                    let gitlings_progress = json["gitlings_progress"]
+                        .as_array()
+                        .map(|arr| arr.iter().map(|v| v.as_bool().unwrap_or(false)).collect())
+                        .unwrap_or_default();
+                    return Self { vol_idx, ch_idx, total_xp, xp_per_chapter, gitlings_progress };
                 }
             }
         }
-        Self { vol_idx: 0, ch_idx: 0, total_xp: 0, xp_per_chapter: vec![] }
+        Self { vol_idx: 0, ch_idx: 0, total_xp: 0, xp_per_chapter: vec![], gitlings_progress: vec![] }
     }
 
     pub fn save(&self) {
@@ -77,6 +82,7 @@ impl SaveData {
                 "ch_idx": self.ch_idx,
                 "total_xp": self.total_xp,
                 "xp_per_chapter": self.xp_per_chapter,
+                "gitlings_progress": self.gitlings_progress,
             });
             let _ = std::fs::write(&path, json.to_string());
         }
@@ -87,6 +93,7 @@ impl SaveData {
         self.ch_idx = 0;
         self.total_xp = 0;
         self.xp_per_chapter = vec![];
+        self.gitlings_progress = vec![];
     }
 
     pub fn record_chapter(&mut self, vol_idx: usize, ch_idx: usize, xp: u32) {
@@ -208,6 +215,7 @@ pub struct App {
 impl App {
     pub fn new() -> Self {
         let save = SaveData::load();
+        let gitlings_progress = save.gitlings_progress.clone();
         Self {
             state: AppState::Menu {
                 selected: 0,
@@ -221,7 +229,7 @@ impl App {
             chapter_state: ChapterState::new(),
             learn_state: LearnLessonState::new(),
             gitlings_state: GitlingsExerciseState::new(),
-            gitlings_progress: Vec::new(),
+            gitlings_progress,
             anim: AnimState::init(),
             anim_tick: 0,
             toast: Toast::new(),
@@ -748,7 +756,12 @@ impl App {
                         self.gitlings_state.completed = true;
                         if ex_idx < self.gitlings_progress.len() {
                             self.gitlings_progress[ex_idx] = true;
+                        } else {
+                            self.gitlings_progress.resize(ex_idx + 1, false);
+                            self.gitlings_progress[ex_idx] = true;
                         }
+                        self.save.gitlings_progress = self.gitlings_progress.clone();
+                        self.save.save();
                     } else {
                         self.sound.play(Sound::Error);
                         self.gitlings_state.input.clear();
