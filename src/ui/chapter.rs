@@ -62,7 +62,8 @@ const HINT_BG: Color = Color::Rgb(15, 15, 30);
 /// * Append / remove from `input` on character / backspace events.
 /// * Toggle `show_hint` when `?` is pressed.
 /// * Advance `hint_level` (up to 3) when `H` is pressed.
-#[derive(Clone)]
+use crate::git_sandbox::GitSandbox;
+
 pub struct ChapterState {
     /// The text the player has typed so far.
     pub input: String,
@@ -79,6 +80,10 @@ pub struct ChapterState {
     pub completed: bool,
     /// Running count of submission attempts.
     pub attempts: u32,
+    /// Optional live Git sandbox for this chapter.
+    pub sandbox: Option<GitSandbox>,
+    /// Stored setup function so the sandbox can be reset between attempts.
+    pub sandbox_setup: Option<fn(&mut GitSandbox)>,
 }
 
 impl Default for ChapterState {
@@ -91,6 +96,8 @@ impl Default for ChapterState {
             hint_level: 0,
             completed: false,
             attempts: 0,
+            sandbox: None,
+            sandbox_setup: None,
         }
     }
 }
@@ -98,6 +105,16 @@ impl Default for ChapterState {
 impl ChapterState {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Reset the sandbox by creating a fresh temp repo and re-running setup.
+    pub fn reset_sandbox(&mut self) {
+        if let Some(setup) = self.sandbox_setup {
+            if let Ok(mut sb) = GitSandbox::new() {
+                setup(&mut sb);
+                self.sandbox = Some(sb);
+            }
+        }
     }
 }
 

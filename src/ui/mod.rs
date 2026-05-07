@@ -14,6 +14,7 @@ use ratatui::{
 use tui_overlay::{Anchor, Overlay, Slide};
 
 use crate::app::{App, AppState};
+use crate::gitlings;
 use crate::learn::renderer;
 
 const ACCENT: Color = Color::Rgb(255, 120, 40);
@@ -63,6 +64,12 @@ pub fn draw(frame: &mut Frame, app: &App) {
         }
         AppState::GameComplete => {
             draw_game_complete(frame, app, *app.anim.border_breathe);
+        }
+        AppState::GitlingsMenu { selected } => {
+            gitlings::renderer::draw_gitlings_menu(frame, app, *selected);
+        }
+        AppState::GitlingsExercise { ex_idx } => {
+            gitlings::renderer::draw_gitlings_exercise(frame, app, *ex_idx);
         }
         AppState::ComingSoon => {
             draw_coming_soon(frame, app);

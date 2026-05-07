@@ -26,6 +26,7 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
         .constraints([Constraint::Fill(1), Constraint::Length(60), Constraint::Fill(1)])
         .split(area);
 
+    // Use nearly full height so more lessons fit
     let vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(1), Constraint::Min(1), Constraint::Length(1)])
@@ -41,6 +42,7 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
     let content_height = inner_height.saturating_sub(HEADER_LINES + FOOTER_LINES);
     let total_blocks = lessons.len() as u16;
 
+    // Determine how many lesson blocks fit; reserve indicator space if scrolling
     let (max_blocks, needs_scroll) = if total_blocks * LESSON_BLOCK <= content_height {
         (total_blocks, false)
     } else {
@@ -48,6 +50,7 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
         (mb.max(1), true)
     };
 
+    // Scroll offset: keep selected item visible, centred when possible
     let scroll = if !needs_scroll {
         0
     } else {
