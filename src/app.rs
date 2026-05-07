@@ -182,6 +182,8 @@ pub enum AppState {
     VolumeComplete { vol_idx: usize },
     /// All volumes done
     GameComplete,
+    /// Gitlings submenu (Start Over / Continue / Back)
+    GitlingsSubMenu { selected: usize },
     /// Gitlings exercise menu
     GitlingsMenu { selected: usize },
     /// Gitlings active exercise
@@ -348,6 +350,7 @@ impl App {
             AppState::ChapterComplete { vol_idx, ch_idx, .. } => self.handle_chapter_complete(key, vol_idx, ch_idx),
             AppState::VolumeComplete { vol_idx } => self.handle_volume_complete(key, vol_idx),
             AppState::GameComplete => self.handle_game_complete(key),
+            AppState::GitlingsSubMenu { selected } => self.handle_gitlings_submenu(key, selected),
             AppState::GitlingsMenu { selected } => self.handle_gitlings_menu(key, selected),
             AppState::GitlingsExercise { ex_idx } => self.handle_gitlings_exercise(key, ex_idx),
             AppState::ComingSoon => self.handle_coming_soon(key),
@@ -379,8 +382,7 @@ impl App {
                     }
                     2 => { // Gitlings
                         self.sound.play(Sound::Correct);
-                        self.gitlings_progress.resize(self.gitlings_exercises.len(), false);
-                        self.state = AppState::GitlingsMenu { selected: 0 };
+                        self.state = AppState::GitlingsSubMenu { selected: 0 };
                     }
                     _ => self.state = AppState::Quit,
                 }
@@ -659,6 +661,43 @@ impl App {
         }
     }
 
+    fn handle_gitlings_submenu(&mut self, key: KeyEvent, selected: usize) {
+        let max = 2;
+        match key.code {
+            KeyCode::Up | KeyCode::Char('k') => {
+                let s = selected.checked_sub(1).unwrap_or(max);
+                self.state = AppState::GitlingsSubMenu { selected: s };
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                let s = (selected + 1) % (max + 1);
+                self.state = AppState::GitlingsSubMenu { selected: s };
+            }
+            KeyCode::Enter | KeyCode::Char(' ') => {
+                self.sound.play(Sound::Correct);
+                match selected {
+                    0 => { // Start Over
+                        self.gitlings_progress = vec![false; self.gitlings_exercises.len()];
+                        self.save.gitlings_progress = self.gitlings_progress.clone();
+                        self.save.save();
+                        self.state = AppState::GitlingsMenu { selected: 0 };
+                    }
+                    1 => { // Continue
+                        self.gitlings_progress.resize(self.gitlings_exercises.len(), false);
+                        let first_incomplete = self.gitlings_progress.iter().position(|&done| !done).unwrap_or(0);
+                        self.state = AppState::GitlingsMenu { selected: first_incomplete };
+                    }
+                    _ => { // Back
+                        self.state = AppState::Menu { selected: 2 };
+                    }
+                }
+            }
+            KeyCode::Esc | KeyCode::Char('q') => {
+                self.state = AppState::Menu { selected: 2 };
+            }
+            _ => {}
+        }
+    }
+
     fn handle_gitlings_menu(&mut self, key: KeyEvent, selected: usize) {
         let max = self.gitlings_exercises.len().saturating_sub(1);
         match key.code {
@@ -682,7 +721,7 @@ impl App {
                 self.state = AppState::GitlingsExercise { ex_idx: selected };
             }
             KeyCode::Esc | KeyCode::Char('q') => {
-                self.state = AppState::Menu { selected: 0 };
+                self.state = AppState::GitlingsSubMenu { selected: 0 };
             }
             _ => {}
         }

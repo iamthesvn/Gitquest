@@ -34,6 +34,9 @@ pub fn draw(frame: &mut Frame, app: &App) {
         AppState::GameMenu { selected } => {
             draw_game_menu(frame, app, *selected);
         }
+        AppState::GitlingsSubMenu { selected } => {
+            draw_gitlings_submenu(frame, app, *selected);
+        }
         AppState::VolumeSelect { selected } => {
             draw_volume_select(frame, app, *selected);
         }
@@ -160,6 +163,43 @@ fn draw_game_menu(frame: &mut Frame, _app: &App, selected: usize) {
         .style(Style::default().bg(BG))
         .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(ACCENT))
             .title(Span::styled(" GitQuest — Game ", Style::default().fg(ACCENT).add_modifier(Modifier::BOLD))));
+    frame.render_widget(p, area);
+}
+
+fn draw_gitlings_submenu(frame: &mut Frame, _app: &App, selected: usize) {
+    let area = frame.area();
+    let mut lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            "  Select an option",
+            Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+    ];
+
+    let items = ["     Start Over", "     Continue", "     Back"];
+    for (i, item) in items.iter().enumerate() {
+        let cursor = if i == selected { "▶ " } else { "  " };
+        let style = if i == selected {
+            Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Color::Rgb(140, 140, 140))
+        };
+        lines.push(Line::from(Span::styled(
+            format!("  {}{}", cursor, item.trim()),
+            style,
+        )));
+        lines.push(Line::from(""));
+    }
+    lines.push(Line::from(Span::styled(
+        "  [↑↓] Navigate  [Enter] Select  [Esc] Back",
+        Style::default().fg(Color::DarkGray),
+    )));
+
+    let p = Paragraph::new(lines)
+        .style(Style::default().bg(BG))
+        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(ACCENT))
+            .title(Span::styled(" GitQuest — Gitlings ", Style::default().fg(ACCENT).add_modifier(Modifier::BOLD))));
     frame.render_widget(p, area);
 }
 
