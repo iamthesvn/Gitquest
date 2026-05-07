@@ -30,55 +30,23 @@ Requires Rust stable (1.85+). No external dependencies — audio is synthesised 
 
 ---
 
-## The story — Halcyon
+## Three ways to play
 
-GitQuest is structured as **4 volumes** of 5 chapters each (20 chapters total).
-Each chapter drops you into a real office scenario. A colleague briefs you,
-gives you context, and then you type the git command that solves the problem.
+### 1. Learn — Guided lessons, zero pressure
+11 bite-sized lessons covering the essentials: `init`, `config`, `add`, `commit`, `push`, `branch`, `switch`, `merge`, `status`, `log`, and `pull`. Each lesson shows you what the command does with animated ASCII art and a live demo. No typing required — just read, watch, and absorb.
 
-### Volume 1 — First Day at Halcyon
-*"You got the job. Now prove you deserve it."*
+### 2. Game — The Halcyon saga
+20 chapters across 4 volumes. Real office scenarios, real characters, real stakes. Type the right git command to advance. Wrong answers cost XP. Hints are available but penalised. Save progress lives at `~/.gitquest/save.json`.
 
-| Ch | Title | Command |
-|----|-------|---------|
-| 1 | The Empty Desk | `git init` |
-| 2 | The Config Chaos | `git config --global user.name` |
-| 3 | The Missing Files | `git add` |
-| 4 | The First Commit | `git commit -m` |
-| 5 | The Repo Goes Remote | `git push origin main` |
+| Vol | Theme | Commands |
+|-----|-------|----------|
+| 1 | First Day at Halcyon | `init`, `config`, `add`, `commit`, `push` |
+| 2 | The Production Crisis | `checkout -b`, `stash`, `log`, `revert`, `merge` |
+| 3 | The Politics of Code | `pull`, `blame`, `cherry-pick`, `branch -d`, `tag` |
+| 4 | The Review Room | `diff`, `diff --cached`, `diff --stat`, `diff --name-only`, `diff --name-status` |
 
-### Volume 2 — The Production Crisis
-*"Something is broken in prod. All eyes are on you."*
-
-| Ch | Title | Command |
-|----|-------|---------|
-| 1 | The Hotfix Branch | `git checkout -b` |
-| 2 | The Stash | `git stash` |
-| 3 | The Log Detective | `git log` |
-| 4 | The Revert | `git revert HEAD` |
-| 5 | The Merge | `git merge` |
-
-### Volume 3 — The Politics of Code
-*"You've survived the crisis. Now survive the team."*
-
-| Ch | Title | Command |
-|----|-------|---------|
-| 1 | The Conflict | `git pull origin main` |
-| 2 | The Blame Game | `git blame` |
-| 3 | The Cherry Pick | `git cherry-pick` |
-| 4 | The Cleanup | `git branch -d` |
-| 5 | The Tag | `git tag -a` |
-
-### Volume 4 — The Review Room
-*"Before it ships, someone has to actually read it."*
-
-| Ch | Title | Command |
-|----|-------|---------|
-| 1 | The Midnight Edit | `git diff` |
-| 2 | The Staged Mistake | `git diff --cached` |
-| 3 | The Wall of Text | `git diff --stat` |
-| 4 | The Scope Creep | `git diff --name-only` |
-| 5 | The Audit Trail | `git diff --name-status` |
+### 3. Gitlings — Hands-on, no hand-holding
+5 rustlings-style exercises (`init`, `config`, `add`, `commit`, `branch`). You type real git commands into isolated temporary repositories. Commands are actually executed and verified. No story, no XP — just you, a terminal, and git.
 
 ---
 
@@ -97,7 +65,7 @@ Git is a terminal tool. Teaching it inside a browser with clickable buttons teac
 **3. Scaffolding, not spoon-feeding.**  
 The 3-tier hint system exists because getting stuck is frustrating, but being told the answer is useless. Hints cost XP because learning happens in the gap between "I don't know" and "I figured it out." The Learn mode exists for the same reason — watch the concept first, then solve the problem.
 
-The four volumes mirror how Git knowledge actually accumulates in a real job: init → config → add → commit → push on day one, then branches, stashes, reverts, and merge conflicts once the codebase catches fire.
+The three modes serve different learning moments. **Learn** when you want to see how something works without consequence. **Game** when you want context and stakes. **Gitlings** when you want reps. The four volumes mirror how Git knowledge actually accumulates in a real job: init → config → add → commit → push on day one, then branches, stashes, reverts, and merge conflicts once the codebase catches fire.
 
 ---
 
@@ -163,8 +131,11 @@ Each hint used costs a small XP penalty. You always earn at least 25% of the bas
 
 ## Features
 
+- **3 modes**: Learn (guided lessons), Game (20-chapter story), Gitlings (hands-on exercises)
 - Narrative-driven gameplay — real office characters, real tension
 - 4 volumes × 5 chapters = 20 scenarios covering essential git workflows
+- 11 Learn lessons with animated ASCII art demonstrations
+- 5 Gitlings exercises with real git execution in isolated sandboxes
 - 3-tier hint system with XP penalty — not hand-holding, just scaffolding
 - Synthesised ambient music (3 tracks) + sound effects via `rodio` — no audio files
 - Git-logo flood transition animation between chapters
