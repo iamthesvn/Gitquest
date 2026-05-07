@@ -16,10 +16,13 @@ impl GitSandbox {
     /// Create a new sandbox in a fresh temp directory.
     pub fn new() -> Result<Self, String> {
         let base = std::env::temp_dir().join("gitquest-sandbox");
-        let _ = fs::remove_dir_all(&base);
         fs::create_dir_all(&base).map_err(|e| format!("mkdir: {e}"))?;
 
-        let path = base.join(format!("repo-{}.", std::process::id()));
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = base.join(format!("repo-{}-{}", std::process::id(), now));
         fs::create_dir_all(&path).map_err(|e| format!("mkdir repo: {e}"))?;
 
         Ok(Self { path })
@@ -30,6 +33,7 @@ impl GitSandbox {
         let output = Command::new("git")
             .args(args)
             .current_dir(&self.path)
+            .env("HOME", &self.path)
             .output();
 
         match output {
@@ -46,9 +50,9 @@ impl GitSandbox {
     /// Run a shell command (non-git) in the sandbox.
     pub fn sh(&self, cmd: &str) -> (String, String, i32) {
         let output = if cfg!(target_os = "windows") {
-            Command::new("cmd").args(["/C", cmd]).current_dir(&self.path).output()
+            Command::new("cmd").args(["/C", cmd]).current_dir(&self.path).env("HOME", &self.path).output()
         } else {
-            Command::new("sh").args(["-c", cmd]).current_dir(&self.path).output()
+            Command::new("sh").args(["-c", cmd]).current_dir(&self.path).env("HOME", &self.path).output()
         };
 
         match output {
