@@ -131,7 +131,7 @@ pub fn draw_menu(frame: &mut Frame, area: Rect, selected: usize, border_breathe:
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(border_color))
                 .title(Span::styled(
-                    " GitQuest v1.0 ",
+                    " GitQuest v0.1.2 ",
                     Style::default()
                         .fg(title_color)
                         .add_modifier(Modifier::BOLD),
