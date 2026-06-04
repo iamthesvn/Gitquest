@@ -2,10 +2,10 @@
 name = "gitquest"
 version = "0.1.2"
 edition = "2024"
-description = "A terminal game that teaches Git through interactive levels"
+description = "A terminal game that teaches Git through interactive narrative chapters, guided lessons, and hands-on exercises with real git execution"
 license = "MIT"
-keywords = ["game", "git", "tui", "terminal", "education"]
-categories = ["games", "command-line-utilities"]
+keywords = ["git", "education", "cli", "tui", "terminal", "game", "tutorial", "learning", "rustlings", "developer-tools"]
+categories = ["games", "command-line-utilities", "development-tools::testing"]
 readme = "README.md"
 
 [[bin]]

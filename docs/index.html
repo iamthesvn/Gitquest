@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="GitQuest — A terminal game that teaches Git through interactive narrative scenarios, guided lessons, and hands-on exercises with real git execution.">
+    <meta name="keywords" content="git, learn git, git tutorial, terminal game, tui, rust, interactive learning, developer tools, git education, command line, rustlings">
+    <title>GitQuest — Learn Git by Living It</title>
+    <style>
+        :root { --accent: #f87828; --bg: #0a0a12; --fg: #e0e0e0; --muted: #888; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; max-width: 720px; margin: 0 auto; padding: 2rem 1rem; }
+        h1 { font-size: 2.5rem; color: var(--accent); margin-bottom: 0.5rem; }
+        .tagline { color: var(--muted); font-size: 1.1rem; margin-bottom: 2rem; }
+        h2 { color: var(--accent); margin-top: 2rem; margin-bottom: 0.75rem; font-size: 1.3rem; }
+        p { margin-bottom: 1rem; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        pre { background: #111; padding: 1rem; border-radius: 6px; overflow-x: auto; margin: 1rem 0; }
+        code { font-family: "SF Mono", Monaco, monospace; font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #222; }
+        th { color: var(--accent); }
+        .cta { display: inline-block; background: var(--accent); color: #000; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; margin-top: 1rem; }
+        .cta:hover { text-decoration: none; opacity: 0.9; }
+        footer { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #222; color: var(--muted); font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <h1>GitQuest</h1>
+    <p class="tagline">Learn Git by living it. A terminal game where every command is a real work scenario.</p>
+
+    <a href="https://github.com/iamthesvn/Gitquest" class="cta">View on GitHub</a>
+
+    <h2>What is GitQuest?</h2>
+    <p>GitQuest is a terminal-based educational game built in Rust that teaches Git through three complementary modes:</p>
+    <ul>
+        <li><strong>Learn</strong> — 11 guided lessons with animated ASCII art demonstrations. No typing required.</li>
+        <li><strong>Game</strong> — A 20-chapter narrative across 4 volumes set at Halcyon, a fictional tech company.</li>
+        <li><strong>Gitlings</strong> — 5 hands-on exercises where you type real git commands in isolated temporary repositories.</li>
+    </ul>
+
+    <h2>Quick Start</h2>
+    <pre><code>cargo install gitquest
+gitquest</code></pre>
+
+    <h2>Why GitQuest?</h2>
+    <p>Most Git tutorials are either dry reference docs or contrived examples with no stakes. GitQuest puts you in real office scenarios — production is down, your CEO is in Slack, and you need the right command <em>now</em>. You remember stories, not bullet points.</p>
+
+    <h2>How It Compares</h2>
+    <table>
+        <tr><th>Feature</th><th>GitQuest</th><th>rustlings</th><th>githug</th></tr>
+        <tr><td>Taught subject</td><td>Git</td><td>Rust</td><td>Git</td></tr>
+        <tr><td>Narrative mode</td><td>✓ 20 chapters</td><td>✗</td><td>✗</td></tr>
+        <tr><td>Guided lessons</td><td>✓ 11 lessons</td><td>✗</td><td>✗</td></tr>
+        <tr><td>Real git execution</td><td>✓ (Gitlings)</td><td>✗</td><td>✓</td></tr>
+        <tr><td>Save progress</td><td>✓</td><td>✓</td><td>✗</td></tr>
+        <tr><td>Audio</td><td>✓ Synthesised</td><td>✗</td><td>✗</td></tr>
+    </table>
+
+    <h2>Use Cases</h2>
+    <ul>
+        <li><strong>Solo learners</strong> — Pick a mode based on your energy: Learn when tired, Game when motivated, Gitlings when you want reps.</li>
+        <li><strong>Workshops & classrooms</strong> — Learn mode works for live demos. Gitlings works for paired exercises.</li>
+        <li><strong>Onboarding</strong> — New hires can work through the Halcyon saga to learn team git workflows in context.</li>
+        <li><strong>Interview prep</strong> — Gitlings exercises cover the exact commands that come up in technical interviews.</li>
+    </ul>
+
+    <h2>Tech Stack</h2>
+    <p>Built with Rust 2024, <a href="https://github.com/ratatui/ratatui">ratatui</a> 0.30, and <a href="https://github.com/RustAudio/rodio">rodio</a> 0.19. Audio is synthesised at runtime — no bundled files. Runs on macOS, Linux, and Windows.</p>
+
+    <h2>License</h2>
+    <p>MIT. Free forever. No ads, no tracking, no accounts required.</p>
+
+    <footer>
+        <p>GitQuest is an open-source project by <a href="https://github.com/iamthesvn">@iamthesvn</a>.</p>
+    </footer>
+</body>
+</html>

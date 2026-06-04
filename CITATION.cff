@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use GitQuest in research, teaching, or tooling comparisons, please cite it as below."
+title: "GitQuest"
+abstract: "A terminal-based game that teaches Git through interactive narrative scenarios, guided lessons, and hands-on rustlings-style exercises with real git execution in isolated sandboxes."
+type: software
+authors:
+  - name: "The GitQuest Contributors"
+repository-code: "https://github.com/iamthesvn/Gitquest"
+url: "https://github.com/iamthesvn/Gitquest"
+license: MIT
+keywords:
+  - git
+  - education
+  - terminal-game
+  - tui
+  - rust
+  - cli-tool
+  - interactive-learning
+  - developer-tools
+  - version-control
+version: 0.1.2
+date-released: 2026-04-21

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Allow all AI crawlers and search engines to index GitQuest content.
+# This includes OpenAI-GPT, Google-Extended, Anthropic-AI, Perplexity, etc.

@@ -166,6 +166,51 @@ To add a whole new volume, append a new `Volume { .. }` to the `vec![]` in `all_
 
 ---
 
+## FAQ
+
+**Q: Is GitQuest free?**  
+Yes. MIT licensed. No ads, no tracking, no accounts.
+
+**Q: Do I need git installed?**  
+Yes. GitQuest shells out to your system `git` binary for the Gitlings exercises. The story mode uses string matching, so git is optional there.
+
+**Q: What's the difference between Learn, Game, and Gitlings?**
+
+| Mode | Style | Typing? | Real git? | Best for |
+|------|-------|---------|-----------|----------|
+| **Learn** | Guided lessons with animated demos | No | No | First exposure to a command |
+| **Game** | Narrative scenarios with characters | Yes | No* | Context + motivation |
+| **Gitlings** | Rustlings-style exercises | Yes | Yes | Muscle memory |
+
+\* Story mode accepts multiple answer formats via string matching.
+
+**Q: How does Gitlings verify my commands?**  
+Each exercise spins up an isolated temporary repository (`/tmp/gitquest-sandbox/...`), runs your command via `std::process::Command`, then checks the repo state (branch names, staged files, commit messages, etc.).
+
+**Q: Will my progress sync between machines?**  
+Not automatically. Progress is stored locally at `~/.gitquest/save.json`. You can copy this file to another machine.
+
+**Q: How is this different from [rustlings](https://github.com/rust-lang/rustlings) or [githug](https://github.com/Gazler/githug)?**
+
+| | GitQuest | rustlings | githug |
+|---|----------|-----------|--------|
+| Language | Rust | Rust | Ruby |
+| Taught | Git | Rust | Git |
+| Style | Game + lessons + exercises | Exercises only | Exercises only |
+| Real git execution | Yes (Gitlings) | No | Yes |
+| Narrative | Yes (20 chapters) | No | No |
+| Guided lessons | Yes (11 lessons) | No | No |
+| Save system | Yes | Yes | No |
+| Audio | Synthesised ambient | No | No |
+
+**Q: Can I use this in a classroom or workshop?**  
+Absolutely. The Learn mode works well for live demos. Gitlings works well for paired exercises. The save system lets students resume later.
+
+**Q: What terminal size do I need?**  
+Minimum 80×24. GitQuest shows a resize warning if your terminal is too small.
+
+---
+
 ## License
 
 MIT
