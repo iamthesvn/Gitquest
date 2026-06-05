@@ -235,9 +235,15 @@
         /* Mode cards */
         .modes-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
             margin-bottom: 4rem;
+        }
+
+        @media (max-width: 640px) {
+            .modes-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .mode-card {
