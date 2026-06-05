@@ -252,6 +252,13 @@
             border-color: #2a2a2a;
         }
 
+        .mode-icon {
+            width: 32px;
+            height: 32px;
+            color: var(--accent);
+            margin-bottom: 0.8rem;
+        }
+
         .mode-card h3 {
             font-size: 1.1rem;
             font-weight: 600;
@@ -431,16 +438,37 @@
 
             <div class="modes-grid">
                 <div class="mode-card">
+                    <div class="mode-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <path d="M8 7h8M8 11h6"/>
+                        </svg>
+                    </div>
                     <h3>Learn</h3>
                     <p>11 guided lessons with animated ASCII art. Watch how init, config, add, commit, push, branch, switch, merge, status, log, and pull actually work. No typing required.</p>
                 </div>
 
                 <div class="mode-card">
+                    <div class="mode-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="2" width="20" height="20" rx="2"/>
+                            <path d="M10 8l6 4-6 4V8z"/>
+                            <path d="M6 12h.01M18 12h.01"/>
+                        </svg>
+                    </div>
                     <h3>Game</h3>
                     <p>20 chapters across 4 volumes set at Halcyon, a fictional tech company. Real office scenarios, real characters, real stakes. Wrong answers cost XP.</p>
                 </div>
 
                 <div class="mode-card">
+                    <div class="mode-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="3" width="20" height="18" rx="2"/>
+                            <path d="M6 8h.01M6 12h.01M6 16h.01"/>
+                            <path d="M10 8h8M10 12h5M10 16h7"/>
+                        </svg>
+                    </div>
                     <h3>Gitlings</h3>
                     <p>5 rustlings-style exercises where you type real git commands into isolated temporary repositories. Commands are executed and verified. No story, no XP — just reps.</p>
                 </div>
