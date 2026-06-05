@@ -232,19 +232,68 @@
             letter-spacing: 0.08em;
         }
 
-        .feature-grid {
+        /* Mode cards */
+        .modes-grid {
             display: grid;
-            gap: 2.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 4rem;
         }
 
-        .feature h3 {
+        .mode-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.8rem 1.5rem;
+            transition: border-color 0.2s;
+        }
+
+        .mode-card:hover {
+            border-color: #2a2a2a;
+        }
+
+        .mode-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .mode-card h3 {
             font-size: 1.1rem;
             font-weight: 600;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.5rem;
             color: var(--fg);
         }
 
-        .feature p {
+        .mode-card p {
+            color: var(--fg-muted);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        /* Feature list */
+        .features-subhead {
+            margin-top: 0;
+            margin-bottom: 2rem;
+        }
+
+        .feature-list {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .feature-item {
+            padding-left: 1.2rem;
+            border-left: 2px solid var(--border);
+        }
+
+        .feature-item h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            color: var(--fg);
+        }
+
+        .feature-item p {
             color: var(--fg-muted);
             font-size: 0.95rem;
             line-height: 1.7;
@@ -385,33 +434,40 @@
         <div class="container">
             <h2>Three Modes</h2>
 
-            <div class="feature-grid">
-                <div class="feature">
+            <div class="modes-grid">
+                <div class="mode-card">
+                    <div class="mode-icon">📖</div>
                     <h3>Learn</h3>
                     <p>11 guided lessons with animated ASCII art. Watch how init, config, add, commit, push, branch, switch, merge, status, log, and pull actually work. No typing required.</p>
                 </div>
 
-                <div class="feature">
+                <div class="mode-card">
+                    <div class="mode-icon">🎮</div>
                     <h3>Game</h3>
-                    <p>20 chapters across 4 volumes set at Halcyon, a fictional tech company. Real office scenarios, real characters, real stakes. Wrong answers cost XP. Hints are available but penalised.</p>
+                    <p>20 chapters across 4 volumes set at Halcyon, a fictional tech company. Real office scenarios, real characters, real stakes. Wrong answers cost XP.</p>
                 </div>
 
-                <div class="feature">
+                <div class="mode-card">
+                    <div class="mode-icon">⚡</div>
                     <h3>Gitlings</h3>
                     <p>5 rustlings-style exercises where you type real git commands into isolated temporary repositories. Commands are executed and verified. No story, no XP — just reps.</p>
                 </div>
+            </div>
 
-                <div class="feature">
+            <h2 class="features-subhead">Features</h2>
+
+            <div class="feature-list">
+                <div class="feature-item">
                     <h3>Real Git Execution</h3>
                     <p>Gitlings spins up isolated temp repos, runs your commands via std::process::Command, and inspects the actual repository state. Not string matching. Real git.</p>
                 </div>
 
-                <div class="feature">
+                <div class="feature-item">
                     <h3>Synthesised Audio</h3>
                     <p>3 ambient music tracks + sound effects generated at runtime via rodio. No audio files to bundle. Mute with M.</p>
                 </div>
 
-                <div class="feature">
+                <div class="feature-item">
                     <h3>Persistent Progress</h3>
                     <p>Your story progress and Gitlings completion status are saved to ~/.gitquest/save.json. Resume where you left off.</p>
                 </div>
