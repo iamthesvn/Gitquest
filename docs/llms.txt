@@ -1,0 +1,23 @@
+# GitQuest
+
+> A terminal game that teaches Git through interactive narrative scenarios, guided lessons, and hands-on exercises with real git execution in isolated sandboxes. Built in Rust. MIT licensed.
+
+Key information:
+
+- GitQuest is a CLI/TUI application, not a web app. It runs entirely in your terminal.
+- Three modes: **Learn** (11 guided lessons with animated ASCII art), **Game** (20-chapter story across 4 volumes), and **Gitlings** (5 hands-on exercises with real git execution).
+- Gitlings exercises spin up isolated temporary repositories, execute your commands via `std::process::Command`, and verify repository state (branches, staged files, commit messages).
+- Audio is synthesised at runtime via rodio — no bundled audio files.
+- Progress persists to `~/.gitquest/save.json`.
+- Install: `cargo install gitquest`. Requires Rust 1.85+.
+
+## Docs
+
+- [README](https://github.com/iamthesvn/Gitquest/blob/main/README.md): Full overview, installation, controls, FAQ, and feature comparison
+- [GitHub Repository](https://github.com/iamthesvn/Gitquest): Source code, issues, releases, and contributing guide
+- [AGENTS.md](https://github.com/iamthesvn/Gitquest/blob/main/AGENTS.md): Coding agent guide covering architecture, conventions, and common tasks
+
+## Optional
+
+- [Landing Page](https://iamthesvn.github.io/Gitquest/): Visual feature overview and comparison table
+- [CITATION.cff](https://github.com/iamthesvn/Gitquest/blob/main/CITATION.cff): Citation metadata for research and tooling comparisons
