@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Primary SEO / GEO metadata -->
-    <title>GitQuest — Learn Git by Living It</title>
+    <title>GitQuest — Learn Git in Your Terminal</title>
     <meta name="description" content="GitQuest is a terminal game that teaches Git through interactive narrative scenarios, guided lessons, and hands-on exercises with real git execution in isolated sandboxes.">
     <meta name="keywords" content="git, learn git, git tutorial, terminal game, tui, rust, interactive learning, developer tools, git education, command line, rustlings, git practice, git training">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="author" content="The GitQuest Contributors">
     <link rel="canonical" href="https://iamthesvn.github.io/Gitquest/">
 
-    <!-- Open Graph (Facebook, LinkedIn, Discord, some LLMs) -->
-    <meta property="og:title" content="GitQuest — Learn Git by Living It">
+    <!-- Open Graph -->
+    <meta property="og:title" content="GitQuest — Learn Git in Your Terminal">
     <meta property="og:description" content="A terminal game that teaches Git through interactive scenarios, guided lessons, and hands-on exercises with real git execution.">
     <meta property="og:url" content="https://iamthesvn.github.io/Gitquest/">
     <meta property="og:type" content="website">
@@ -21,10 +21,10 @@
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="GitQuest — Learn Git by Living It">
+    <meta name="twitter:title" content="GitQuest — Learn Git in Your Terminal">
     <meta name="twitter:description" content="A terminal game that teaches Git through interactive scenarios, guided lessons, and hands-on exercises with real git execution.">
 
-    <!-- Schema.org structured data (critical for LLMs and generative engines) -->
+    <!-- Schema.org structured data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -39,91 +39,448 @@
       "softwareVersion": "0.1.2",
       "license": "https://opensource.org/licenses/MIT",
       "isAccessibleForFree": true,
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "author": {
-        "@type": "Organization",
-        "name": "The GitQuest Contributors",
-        "url": "https://github.com/iamthesvn/Gitquest"
-      }
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "author": { "@type": "Organization", "name": "The GitQuest Contributors", "url": "https://github.com/iamthesvn/Gitquest" }
     }
     </script>
+
     <style>
-        :root { --accent: #f87828; --bg: #0a0a12; --fg: #e0e0e0; --muted: #888; }
+        :root {
+            --bg: #0c0c0c;
+            --bg-secondary: #111111;
+            --fg: #e8e8e8;
+            --fg-muted: #888888;
+            --accent: #4ade80;
+            --accent-dim: #22c55e;
+            --border: #1a1a1a;
+            --code-bg: #0a0a0a;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; max-width: 720px; margin: 0 auto; padding: 2rem 1rem; }
-        h1 { font-size: 2.5rem; color: var(--accent); margin-bottom: 0.5rem; }
-        .tagline { color: var(--muted); font-size: 1.1rem; margin-bottom: 2rem; }
-        h2 { color: var(--accent); margin-top: 2rem; margin-bottom: 0.75rem; font-size: 1.3rem; }
-        p { margin-bottom: 1rem; }
-        a { color: var(--accent); text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        pre { background: #111; padding: 1rem; border-radius: 6px; overflow-x: auto; margin: 1rem 0; }
-        code { font-family: "SF Mono", Monaco, monospace; font-size: 0.9rem; }
-        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-        th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #222; }
-        th { color: var(--accent); }
-        .cta { display: inline-block; background: var(--accent); color: #000; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; margin-top: 1rem; }
-        .cta:hover { text-decoration: none; opacity: 0.9; }
-        footer { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #222; color: var(--muted); font-size: 0.85rem; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 6rem 0 4rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--fg-muted);
+            margin-bottom: 2rem;
+            font-family: "SF Mono", Monaco, monospace;
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 span {
+            color: var(--accent);
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--fg-muted);
+            max-width: 540px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.7;
+        }
+
+        /* Terminal window */
+        .terminal {
+            background: var(--code-bg);
+            border: 1px solid #222;
+            border-radius: 10px;
+            max-width: 520px;
+            margin: 0 auto 2rem;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .terminal-header {
+            background: #161616;
+            padding: 0.6rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            border-bottom: 1px solid #222;
+        }
+
+        .terminal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .terminal-dot.red { background: #ff5f56; }
+        .terminal-dot.yellow { background: #ffbd2e; }
+        .terminal-dot.green { background: #27c93f; }
+
+        .terminal-title {
+            margin-left: auto;
+            font-size: 0.7rem;
+            color: #555;
+            font-family: "SF Mono", Monaco, monospace;
+        }
+
+        .terminal-body {
+            padding: 1.2rem 1.5rem;
+            font-family: "SF Mono", Monaco, monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: #ccc;
+        }
+
+        .terminal-body .prompt { color: var(--accent); }
+        .terminal-body .cmd { color: #e8e8e8; }
+        .terminal-body .output { color: #888; }
+        .terminal-body .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: var(--accent);
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* Install steps */
+        .install {
+            padding: 5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .install h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--fg-muted);
+            margin-bottom: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .step {
+            margin-bottom: 2rem;
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-family: "SF Mono", Monaco, monospace;
+        }
+
+        .step-code {
+            background: var(--code-bg);
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 0.9rem 1.2rem;
+            font-family: "SF Mono", Monaco, monospace;
+            font-size: 0.85rem;
+            color: #ddd;
+            overflow-x: auto;
+        }
+
+        .step-code .comment { color: #555; }
+
+        /* Features */
+        .features {
+            padding: 5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .features h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--fg-muted);
+            margin-bottom: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .feature-grid {
+            display: grid;
+            gap: 2.5rem;
+        }
+
+        .feature h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            color: var(--fg);
+        }
+
+        .feature p {
+            color: var(--fg-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* Comparison */
+        .compare {
+            padding: 5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .compare h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--fg-muted);
+            margin-bottom: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 0.7rem 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--fg-muted);
+            font-weight: 500;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td { color: var(--fg); }
+        td:first-child { color: var(--fg-muted); }
+
+        .check { color: var(--accent); }
+        .cross { color: #444; }
+
+        /* Footer */
+        .footer {
+            padding: 4rem 0;
+            text-align: center;
+        }
+
+        .footer a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--fg);
+            color: var(--bg);
+            padding: 0.7rem 1.4rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        .footer a:hover { opacity: 0.85; }
+
+        .footer a svg { fill: var(--bg); }
+
+        .footer-note {
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #444;
+        }
     </style>
 </head>
 <body>
-    <h1>GitQuest</h1>
-    <p class="tagline">Learn Git by living it. A terminal game where every command is a real work scenario.</p>
 
-    <a href="https://github.com/iamthesvn/Gitquest" class="cta">
-        <svg height="20" viewBox="0 0 16 16" width="20" style="vertical-align: middle; margin-right: 8px; fill: currentColor;">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
-        </svg>
-        View on GitHub
-    </a>
+    <section class="hero">
+        <div class="container">
+            <div class="badge">
+                <span class="badge-dot"></span>
+                Open Source &middot; MIT License
+            </div>
 
-    <h2>What is GitQuest?</h2>
-    <p>GitQuest is a terminal-based educational game built in Rust that teaches Git through three complementary modes:</p>
-    <ul>
-        <li><strong>Learn</strong> — 11 guided lessons with animated ASCII art demonstrations. No typing required.</li>
-        <li><strong>Game</strong> — A 20-chapter narrative across 4 volumes set at Halcyon, a fictional tech company.</li>
-        <li><strong>Gitlings</strong> — 5 hands-on exercises where you type real git commands in isolated temporary repositories.</li>
-    </ul>
+            <h1>Learn Git.<br><span>In Your Terminal.</span></h1>
 
-    <h2>Quick Start</h2>
-    <pre><code>cargo install gitquest
-gitquest</code></pre>
+            <p>Not a video course. Not a browser sandbox. A game that runs in your terminal, teaches real git commands, and remembers what you learned.</p>
 
-    <h2>Why GitQuest?</h2>
-    <p>Most Git tutorials are either dry reference docs or contrived examples with no stakes. GitQuest puts you in real office scenarios — production is down, your CEO is in Slack, and you need the right command <em>now</em>. You remember stories, not bullet points.</p>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">gitquest</span>
+                </div>
+                <div class="terminal-body">
+                    <span class="prompt">$</span> <span class="cmd">gitquest</span><br>
+                    <span class="output"></span><br>
+                    <span class="output">  ▶  Learn</span><br>
+                    <span class="output">     Game</span><br>
+                    <span class="output">     Gitlings</span><br>
+                    <span class="output">     Quit</span><br>
+                    <br>
+                    <span class="prompt">$</span> <span class="cmd">git init</span><br>
+                    <span class="output">Initialized empty Git repository in /tmp/gitquest-sandbox/repo-123/</span><br>
+                    <span class="output" style="color:var(--accent)">✓ Exercise complete</span><br>
+                    <br>
+                    <span class="prompt">$</span> <span class="cursor"></span>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <h2>How It Compares</h2>
-    <table>
-        <tr><th>Feature</th><th>GitQuest</th><th>rustlings</th><th>githug</th></tr>
-        <tr><td>Taught subject</td><td>Git</td><td>Rust</td><td>Git</td></tr>
-        <tr><td>Narrative mode</td><td>✓ 20 chapters</td><td>✗</td><td>✗</td></tr>
-        <tr><td>Guided lessons</td><td>✓ 11 lessons</td><td>✗</td><td>✗</td></tr>
-        <tr><td>Real git execution</td><td>✓ (Gitlings)</td><td>✗</td><td>✓</td></tr>
-        <tr><td>Save progress</td><td>✓</td><td>✓</td><td>✗</td></tr>
-        <tr><td>Audio</td><td>✓ Synthesised</td><td>✗</td><td>✗</td></tr>
-    </table>
+    <section class="install">
+        <div class="container">
+            <h2>Install</h2>
 
-    <h2>Use Cases</h2>
-    <ul>
-        <li><strong>Solo learners</strong> — Pick a mode based on your energy: Learn when tired, Game when motivated, Gitlings when you want reps.</li>
-        <li><strong>Workshops & classrooms</strong> — Learn mode works for live demos. Gitlings works for paired exercises.</li>
-        <li><strong>Onboarding</strong> — New hires can work through the Halcyon saga to learn team git workflows in context.</li>
-        <li><strong>Interview prep</strong> — Gitlings exercises cover the exact commands that come up in technical interviews.</li>
-    </ul>
+            <div class="step">
+                <div class="step-label">1. Install</div>
+                <div class="step-code">cargo install gitquest</div>
+            </div>
 
-    <h2>Tech Stack</h2>
-    <p>Built with Rust 2024, <a href="https://github.com/ratatui/ratatui">ratatui</a> 0.30, and <a href="https://github.com/RustAudio/rodio">rodio</a> 0.19. Audio is synthesised at runtime — no bundled files. Runs on macOS, Linux, and Windows.</p>
+            <div class="step">
+                <div class="step-label">2. Run</div>
+                <div class="step-code">gitquest</div>
+            </div>
 
-    <h2>License</h2>
-    <p>MIT. Free forever. No ads, no tracking, no accounts required.</p>
+            <div class="step">
+                <div class="step-label">Requires</div>
+                <div class="step-code">Rust 1.85+ <span class="comment"># stable</span></div>
+            </div>
+        </div>
+    </section>
 
-    <footer>
-        <p>GitQuest is an open-source project by <a href="https://github.com/iamthesvn">@iamthesvn</a>.</p>
-    </footer>
+    <section class="features">
+        <div class="container">
+            <h2>Three Modes</h2>
+
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>Learn</h3>
+                    <p>11 guided lessons with animated ASCII art. Watch how init, config, add, commit, push, branch, switch, merge, status, log, and pull actually work. No typing required.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>Game</h3>
+                    <p>20 chapters across 4 volumes set at Halcyon, a fictional tech company. Real office scenarios, real characters, real stakes. Wrong answers cost XP. Hints are available but penalised.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>Gitlings</h3>
+                    <p>5 rustlings-style exercises where you type real git commands into isolated temporary repositories. Commands are executed and verified. No story, no XP — just reps.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>Real Git Execution</h3>
+                    <p>Gitlings spins up isolated temp repos, runs your commands via std::process::Command, and inspects the actual repository state. Not string matching. Real git.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>Synthesised Audio</h3>
+                    <p>3 ambient music tracks + sound effects generated at runtime via rodio. No audio files to bundle. Mute with M.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>Persistent Progress</h3>
+                    <p>Your story progress and Gitlings completion status are saved to ~/.gitquest/save.json. Resume where you left off.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="compare">
+        <div class="container">
+            <h2>How It Compares</h2>
+
+            <table>
+                <tr>
+                    <th>Feature</th>
+                    <th>GitQuest</th>
+                    <th>rustlings</th>
+                    <th>githug</th>
+                </tr>
+                <tr>
+                    <td>Taught subject</td>
+                    <td>Git</td>
+                    <td>Rust</td>
+                    <td>Git</td>
+                </tr>
+                <tr>
+                    <td>Narrative mode</td>
+                    <td class="check">20 chapters</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Guided lessons</td>
+                    <td class="check">11 lessons</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Real git execution</td>
+                    <td class="check">Yes</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">Yes</td>
+                </tr>
+                <tr>
+                    <td>Save progress</td>
+                    <td class="check">Yes</td>
+                    <td class="check">Yes</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Audio</td>
+                    <td class="check">Synthesised</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+            </table>
+        </div>
+    </section>
+
+    <section class="footer">
+        <div class="container">
+            <a href="https://github.com/iamthesvn/Gitquest">
+                <svg height="18" viewBox="0 0 16 16" width="18">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+                View on GitHub
+            </a>
+            <p class="footer-note">MIT License &middot; Free forever &middot; No ads, no tracking</p>
+        </div>
+    </section>
+
 </body>
 </html>
