@@ -101,12 +101,10 @@ mod tests {
         let (out, err, code) = sb.sh(cmd);
         let output = if code != 0 {
             if err.is_empty() { out } else { err }
+        } else if out.is_empty() {
+            "(no output)".to_string()
         } else {
-            if out.is_empty() {
-                "(no output)".to_string()
-            } else {
-                out
-            }
+            out
         };
         let pass = code == 0 && (ex.verify)(&sb);
         (pass, output)

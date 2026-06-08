@@ -96,8 +96,7 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
         )));
     }
 
-    for i in scroll..end {
-        let lesson = &lessons[i];
+    for (i, lesson) in lessons.iter().enumerate().skip(scroll).take(end - scroll) {
         let is_selected = i == selected;
         let marker = if is_selected { "▶ " } else { "  " };
         let style = if is_selected {
@@ -294,7 +293,7 @@ pub fn draw_learn_lesson(frame: &mut Frame, app: &App, lesson_idx: usize, step_i
     frame.render_widget(right_block, panels[1]);
 
     // Bottom command display (when command is present and not yet run)
-    if has_pending_command {
+    if has_pending_command && let Some(cmd) = step.command {
         let bottom = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(1), Constraint::Length(3)])
@@ -306,7 +305,7 @@ pub fn draw_learn_lesson(frame: &mut Frame, app: &App, lesson_idx: usize, step_i
                 "  $ ",
                 Style::default().fg(GREEN).add_modifier(Modifier::BOLD),
             ),
-            Span::styled(step.command.unwrap(), Style::default().fg(Color::White)),
+            Span::styled(cmd, Style::default().fg(Color::White)),
         ]);
 
         let cmd_widget = Paragraph::new(cmd_line).block(
@@ -320,7 +319,7 @@ pub fn draw_learn_lesson(frame: &mut Frame, app: &App, lesson_idx: usize, step_i
     }
 
     // Bottom result banner (after command has run)
-    if use_result && step.command.is_some() {
+    if use_result && let Some(cmd) = step.command {
         let bottom = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(1), Constraint::Length(3)])
@@ -332,7 +331,7 @@ pub fn draw_learn_lesson(frame: &mut Frame, app: &App, lesson_idx: usize, step_i
                 "  $ ",
                 Style::default().fg(GREEN).add_modifier(Modifier::BOLD),
             ),
-            Span::styled(step.command.unwrap(), Style::default().fg(Color::White)),
+            Span::styled(cmd, Style::default().fg(Color::White)),
             Span::styled(
                 "   ✓",
                 Style::default().fg(GREEN).add_modifier(Modifier::BOLD),

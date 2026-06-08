@@ -190,7 +190,7 @@ fn render_boot_sequence() -> Vec<f32> {
         (392.00, 31.0), // G4
     ];
 
-    for i in 0..n_samples {
+    for (i, item) in out.iter_mut().enumerate().take(n_samples) {
         let t_abs = i as f32 / SAMPLE_RATE as f32;
         let beat_abs = t_abs / beat;
         let mut s = 0.0f32;
@@ -221,7 +221,7 @@ fn render_boot_sequence() -> Vec<f32> {
         let beat_t = (beat_abs % 1.0) * beat;
         s += pulse(98.0, beat_t, 0.08);
 
-        out[i] = (s * MASTER_VOL).clamp(-1.0, 1.0);
+        *item = (s * MASTER_VOL).clamp(-1.0, 1.0);
     }
     out
 }
@@ -269,7 +269,7 @@ fn render_void_wanderer() -> Vec<f32> {
         (440.00, 31.0), // A4
     ];
 
-    for i in 0..n_samples {
+    for (i, item) in out.iter_mut().enumerate().take(n_samples) {
         let t_abs = i as f32 / SAMPLE_RATE as f32;
         let beat_abs = t_abs / beat;
         let mut s = 0.0f32;
@@ -303,7 +303,7 @@ fn render_void_wanderer() -> Vec<f32> {
             s += pulse(110.0, synco_t * beat * 10.0, 0.07);
         }
 
-        out[i] = (s * MASTER_VOL).clamp(-1.0, 1.0);
+        *item = (s * MASTER_VOL).clamp(-1.0, 1.0);
     }
     out
 }
@@ -369,7 +369,7 @@ fn render_mission_critical() -> Vec<f32> {
         (146.83, 31.0), // D3
     ];
 
-    for i in 0..n_samples {
+    for (i, item) in out.iter_mut().enumerate().take(n_samples) {
         let t_abs = i as f32 / SAMPLE_RATE as f32;
         let beat_abs = t_abs / beat;
         let mut s = 0.0f32;
@@ -404,7 +404,7 @@ fn render_mission_critical() -> Vec<f32> {
             s += pulse(146.83, beat_t, 0.10);
         }
 
-        out[i] = (s * MASTER_VOL).clamp(-1.0, 1.0);
+        *item = (s * MASTER_VOL).clamp(-1.0, 1.0);
     }
     out
 }
