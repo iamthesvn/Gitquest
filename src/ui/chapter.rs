@@ -17,15 +17,15 @@
 //! Minimum terminal size: 80 × 24. Zero-size areas are handled gracefully.
 
 use ratatui::{
+    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
-    Frame,
 };
 
-use crate::volumes::Chapter;
 use crate::anim::AnimState;
+use crate::volumes::Chapter;
 
 // ── Colour palette ────────────────────────────────────────────────────────────
 
@@ -87,7 +87,6 @@ pub struct ChapterState {
     pub sandbox_setup: Option<fn(&mut GitSandbox)>,
 }
 
-
 impl ChapterState {
     pub fn new() -> Self {
         Self::default()
@@ -96,10 +95,11 @@ impl ChapterState {
     /// Reset the sandbox by creating a fresh temp repo and re-running setup.
     pub fn reset_sandbox(&mut self) {
         if let Some(setup) = self.sandbox_setup
-            && let Ok(mut sb) = GitSandbox::new() {
-                setup(&mut sb);
-                self.sandbox = Some(sb);
-            }
+            && let Ok(mut sb) = GitSandbox::new()
+        {
+            setup(&mut sb);
+            self.sandbox = Some(sb);
+        }
     }
 }
 
@@ -150,7 +150,7 @@ pub fn draw_chapter(
     let hint_height = ((full_hint_height as f64 * openness) as u16).min(max_hint);
 
     let terminal_height: u16 = 3; // border + 1 content row + border
-    let hud_height: u16 = 3;      // border + 1 content row + border
+    let hud_height: u16 = 3; // border + 1 content row + border
 
     // Remaining height for the art/dialogue/task area.
     let mid_height = area
@@ -183,10 +183,9 @@ pub fn draw_chapter(
     draw_mid(frame, chapter, state, rows[1]);
     draw_terminal(frame, chapter, state, rows[2], anim);
 
-    if show_hint_anim
-        && let Some(hint_area) = rows.get(3) {
-            draw_hints(frame, chapter, state, *hint_area, anim);
-        }
+    if show_hint_anim && let Some(hint_area) = rows.get(3) {
+        draw_hints(frame, chapter, state, *hint_area, anim);
+    }
 }
 
 // ── HUD bar ───────────────────────────────────────────────────────────────────
@@ -205,10 +204,7 @@ fn draw_hud(
     }
 
     // Left portion: breadcrumb
-    let breadcrumb = format!(
-        " Vol {} . Ch {} . {}",
-        vol_num, ch_num, chapter.title
-    );
+    let breadcrumb = format!(" Vol {} . Ch {} . {}", vol_num, ch_num, chapter.title);
 
     // Right portion: XP + keybind hints
     let xp_str = format!("XP: {:>3}  [?] Hint  [Ctrl+C] Quit ", chapter.xp);
@@ -221,14 +217,10 @@ fn draw_hud(
         .split(area);
 
     // Left: breadcrumb in accent colour
-    let left_line = Line::from(vec![
-        Span::styled(
-            breadcrumb,
-            Style::default()
-                .fg(ACCENT)
-                .add_modifier(Modifier::BOLD),
-        ),
-    ]);
+    let left_line = Line::from(vec![Span::styled(
+        breadcrumb,
+        Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+    )]);
     let left_para = Paragraph::new(left_line).block(
         Block::default()
             .borders(Borders::ALL)
@@ -239,10 +231,7 @@ fn draw_hud(
 
     // Right: XP + keys in dark-gray
     let right_line = Line::from(vec![
-        Span::styled(
-            "XP: ",
-            Style::default().fg(Color::DarkGray),
-        ),
+        Span::styled("XP: ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             format!("{:>3}", chapter.xp),
             Style::default()
@@ -334,7 +323,10 @@ fn draw_npc_and_task(frame: &mut Frame, chapter: &Chapter, _state: &ChapterState
 
     let right_rows = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(npc_height), Constraint::Length(task_height)])
+        .constraints([
+            Constraint::Length(npc_height),
+            Constraint::Length(task_height),
+        ])
         .split(area);
 
     draw_npc_dialogue(frame, chapter, right_rows[0]);
@@ -353,20 +345,14 @@ fn draw_npc_dialogue(frame: &mut Frame, chapter: &Chapter, area: Rect) {
 
     // NPC name header
     lines.push(Line::from(vec![
-        Span::styled(
-            " [[ ",
-            Style::default().fg(Color::Rgb(80, 80, 100)),
-        ),
+        Span::styled(" [[ ", Style::default().fg(Color::Rgb(80, 80, 100))),
         Span::styled(
             chapter.npc_name,
             Style::default()
                 .fg(NPC_NAME_COLOR)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::styled(
-            " ]]",
-            Style::default().fg(Color::Rgb(80, 80, 100)),
-        ),
+        Span::styled(" ]]", Style::default().fg(Color::Rgb(80, 80, 100))),
     ]));
 
     // Speech bubble lines — italic light-gray
@@ -439,7 +425,13 @@ fn draw_task_prompt(frame: &mut Frame, chapter: &Chapter, area: Rect) {
 /// * Normal:        dark bg, ACCENT border.
 /// * `flash_wrong`  > 0: red bg + red border.
 /// * `flash_correct`> 0: green border.
-fn draw_terminal(frame: &mut Frame, _chapter: &Chapter, state: &ChapterState, area: Rect, anim: &AnimState) {
+fn draw_terminal(
+    frame: &mut Frame,
+    _chapter: &Chapter,
+    state: &ChapterState,
+    area: Rect,
+    anim: &AnimState,
+) {
     if area.width == 0 || area.height == 0 {
         return;
     }
@@ -456,15 +448,10 @@ fn draw_terminal(frame: &mut Frame, _chapter: &Chapter, state: &ChapterState, ar
     // Build the input line: prompt + typed text + blinking cursor
     let prompt = Span::styled(
         "  $ ",
-        Style::default()
-            .fg(GREEN)
-            .add_modifier(Modifier::BOLD),
+        Style::default().fg(GREEN).add_modifier(Modifier::BOLD),
     );
 
-    let typed = Span::styled(
-        state.input.as_str(),
-        Style::default().fg(Color::White),
-    );
+    let typed = Span::styled(state.input.as_str(), Style::default().fg(Color::White));
 
     // Blinking cursor: always rendered (the terminal owns the blink illusion
     // via state.flash_wrong / flash_correct toggling; the cursor itself is
@@ -500,7 +487,13 @@ fn draw_terminal(frame: &mut Frame, _chapter: &Chapter, state: &ChapterState, ar
 /// Only called when `state.show_hint == true`.
 /// Shows `hints[0..state.hint_level]` as bullet points, then a footer line
 /// prompting the player to reveal the next hint or telling them all are shown.
-fn draw_hints(frame: &mut Frame, chapter: &Chapter, state: &ChapterState, area: Rect, _anim: &AnimState) {
+fn draw_hints(
+    frame: &mut Frame,
+    chapter: &Chapter,
+    state: &ChapterState,
+    area: Rect,
+    _anim: &AnimState,
+) {
     if area.width == 0 || area.height == 0 {
         return;
     }
@@ -517,10 +510,7 @@ fn draw_hints(frame: &mut Frame, chapter: &Chapter, state: &ChapterState, area: 
                 format!("  {} ", bullet_char(i)),
                 Style::default().fg(Color::Cyan),
             ),
-            Span::styled(
-                *hint,
-                Style::default().fg(Color::Rgb(200, 220, 255)),
-            ),
+            Span::styled(*hint, Style::default().fg(Color::Rgb(200, 220, 255))),
         ]));
     }
 
@@ -556,7 +546,7 @@ fn draw_hints(frame: &mut Frame, chapter: &Chapter, state: &ChapterState, area: 
             ),
         ])
     };
-    lines.push(Line::from(""));  // breathing room before footer
+    lines.push(Line::from("")); // breathing room before footer
     lines.push(footer);
 
     let hint_block = Block::default()

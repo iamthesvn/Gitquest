@@ -4,34 +4,34 @@
 //   Menu → VolumeSelect → ChapterIntro → Playing → ChapterComplete
 //       → (next chapter) or VolumeComplete → GameComplete
 
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use ratatui::{Terminal, backend::Backend};
 use std::{
     io,
     time::{Duration, Instant},
 };
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
-use ratatui::{backend::Backend, Terminal};
 use tui_overlay::{Easing, OverlayState};
 
+use crate::learn::renderer::LearnLessonState;
+use crate::ui::chapter::ChapterState;
 use crate::{
     anim::AnimState,
     audio::{MusicPlayer, Sound, SoundManager},
     git_sandbox::GitSandbox,
-    gitlings::{all_exercises, Exercise, GitlingsExerciseState},
-    learn::{all_lessons, Lesson},
+    gitlings::{Exercise, GitlingsExerciseState, all_exercises},
+    learn::{Lesson, all_lessons},
     ui,
-    volumes::{all_volumes, rank_title, Chapter, Volume},
+    volumes::{Chapter, Volume, all_volumes, rank_title},
 };
 use animate::Animate;
-use crate::ui::chapter::ChapterState;
-use crate::learn::renderer::LearnLessonState;
 
 const TICK_RATE: Duration = Duration::from_millis(100);
 
 // ── Save data ─────────────────────────────────────────────────────────────────
 
 pub struct SaveData {
-    pub vol_idx: usize,   // 0-based index into volumes vec
-    pub ch_idx: usize,    // 0-based index into current volume's chapters
+    pub vol_idx: usize, // 0-based index into volumes vec
+    pub ch_idx: usize,  // 0-based index into current volume's chapters
     pub total_xp: u32,
     pub xp_per_chapter: Vec<Vec<u32>>, // [vol][ch]
     pub gitlings_progress: Vec<bool>,  // completed status per exercise
@@ -45,29 +45,44 @@ impl SaveData {
     pub fn load() -> Self {
         if let Some(path) = save_path()
             && let Ok(data) = std::fs::read_to_string(&path)
-                && let Ok(json) = serde_json::from_str::<serde_json::Value>(&data) {
-                    let vol_idx = json["vol_idx"].as_u64().unwrap_or(0) as usize;
-                    let ch_idx = json["ch_idx"].as_u64().unwrap_or(0) as usize;
-                    let total_xp = json["total_xp"].as_u64().unwrap_or(0) as u32;
-                    let xp_per_chapter = json["xp_per_chapter"]
-                        .as_array()
-                        .map(|vols| {
-                            vols.iter()
-                                .map(|v| {
-                                    v.as_array()
-                                        .map(|chs| chs.iter().map(|x| x.as_u64().unwrap_or(0) as u32).collect())
-                                        .unwrap_or_default()
+            && let Ok(json) = serde_json::from_str::<serde_json::Value>(&data)
+        {
+            let vol_idx = json["vol_idx"].as_u64().unwrap_or(0) as usize;
+            let ch_idx = json["ch_idx"].as_u64().unwrap_or(0) as usize;
+            let total_xp = json["total_xp"].as_u64().unwrap_or(0) as u32;
+            let xp_per_chapter = json["xp_per_chapter"]
+                .as_array()
+                .map(|vols| {
+                    vols.iter()
+                        .map(|v| {
+                            v.as_array()
+                                .map(|chs| {
+                                    chs.iter().map(|x| x.as_u64().unwrap_or(0) as u32).collect()
                                 })
-                                .collect()
+                                .unwrap_or_default()
                         })
-                        .unwrap_or_default();
-                    let gitlings_progress = json["gitlings_progress"]
-                        .as_array()
-                        .map(|arr| arr.iter().map(|v| v.as_bool().unwrap_or(false)).collect())
-                        .unwrap_or_default();
-                    return Self { vol_idx, ch_idx, total_xp, xp_per_chapter, gitlings_progress };
-                }
-        Self { vol_idx: 0, ch_idx: 0, total_xp: 0, xp_per_chapter: vec![], gitlings_progress: vec![] }
+                        .collect()
+                })
+                .unwrap_or_default();
+            let gitlings_progress = json["gitlings_progress"]
+                .as_array()
+                .map(|arr| arr.iter().map(|v| v.as_bool().unwrap_or(false)).collect())
+                .unwrap_or_default();
+            return Self {
+                vol_idx,
+                ch_idx,
+                total_xp,
+                xp_per_chapter,
+                gitlings_progress,
+            };
+        }
+        Self {
+            vol_idx: 0,
+            ch_idx: 0,
+            total_xp: 0,
+            xp_per_chapter: vec![],
+            gitlings_progress: vec![],
+        }
     }
 
     pub fn save(&self) {
@@ -103,7 +118,11 @@ impl SaveData {
             self.xp_per_chapter[vol_idx].push(0);
         }
         self.xp_per_chapter[vol_idx][ch_idx] = xp;
-        self.total_xp = self.xp_per_chapter.iter().flat_map(|v| v.iter().copied()).sum();
+        self.total_xp = self
+            .xp_per_chapter
+            .iter()
+            .flat_map(|v| v.iter().copied())
+            .sum();
         // Advance progress pointer
         self.vol_idx = vol_idx;
         self.ch_idx = ch_idx + 1;
@@ -159,33 +178,67 @@ impl Toast {
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppState {
     /// Main menu (Learn / New Game / Continue / Quit)
-    Menu { selected: usize },
+    Menu {
+        selected: usize,
+    },
     /// Learn mode menu
-    LearnMenu { selected: usize },
+    LearnMenu {
+        selected: usize,
+    },
     /// Learn mode lesson
-    LearnLesson { lesson_idx: usize, step_idx: usize },
+    LearnLesson {
+        lesson_idx: usize,
+        step_idx: usize,
+    },
     /// Game submenu (New Game / Continue)
-    GameMenu { selected: usize },
+    GameMenu {
+        selected: usize,
+    },
     /// Volume selection screen
-    VolumeSelect { selected: usize },
+    VolumeSelect {
+        selected: usize,
+    },
     /// Full-screen chapter intro — shows volume + chapter title, NPC first line, press Enter
-    ChapterIntro { vol_idx: usize, ch_idx: usize },
+    ChapterIntro {
+        vol_idx: usize,
+        ch_idx: usize,
+    },
     /// Active gameplay
-    Playing { vol_idx: usize, ch_idx: usize },
+    Playing {
+        vol_idx: usize,
+        ch_idx: usize,
+    },
     /// Chapter complete — brief celebration then auto-advance
-    ChapterComplete { vol_idx: usize, ch_idx: usize, earned_xp: u32, anim_tick: usize },
+    ChapterComplete {
+        vol_idx: usize,
+        ch_idx: usize,
+        earned_xp: u32,
+        anim_tick: usize,
+    },
     /// Transition flood animation
-    Transition { next_vol: usize, next_ch: usize, frame: usize },
+    Transition {
+        next_vol: usize,
+        next_ch: usize,
+        frame: usize,
+    },
     /// All chapters in a volume done
-    VolumeComplete { vol_idx: usize },
+    VolumeComplete {
+        vol_idx: usize,
+    },
     /// All volumes done
     GameComplete,
     /// Gitlings submenu (Start Over / Continue / Back)
-    GitlingsSubMenu { selected: usize },
+    GitlingsSubMenu {
+        selected: usize,
+    },
     /// Gitlings exercise menu
-    GitlingsMenu { selected: usize },
+    GitlingsMenu {
+        selected: usize,
+    },
     /// Gitlings active exercise
-    GitlingsExercise { ex_idx: usize },
+    GitlingsExercise {
+        ex_idx: usize,
+    },
     /// Gitlings mode placeholder (retained for future use)
     #[allow(dead_code)]
     ComingSoon,
@@ -217,9 +270,7 @@ impl App {
         let save = SaveData::load();
         let gitlings_progress = save.gitlings_progress.clone();
         Self {
-            state: AppState::Menu {
-                selected: 0,
-            },
+            state: AppState::Menu { selected: 0 },
             save,
             sound: SoundManager::new(),
             music: MusicPlayer::new(),
@@ -247,10 +298,16 @@ impl App {
         self.volumes.get(vol_idx)?.chapters.get(ch_idx)
     }
 
-    pub fn total_xp(&self) -> u32 { self.save.total_xp }
-    pub fn rank(&self) -> &'static str { rank_title(self.save.total_xp) }
+    pub fn total_xp(&self) -> u32 {
+        self.save.total_xp
+    }
+    pub fn rank(&self) -> &'static str {
+        rank_title(self.save.total_xp)
+    }
 
-    pub fn toggle_mute(&mut self) { self.music.toggle_mute(); }
+    pub fn toggle_mute(&mut self) {
+        self.music.toggle_mute();
+    }
 
     // ── Tick (called every 100 ms) ────────────────────────────────────────────
 
@@ -260,8 +317,12 @@ impl App {
         self.anim_tick = self.anim_tick.wrapping_add(1);
 
         // Decay flash timers
-        if self.chapter_state.flash_wrong > 0 { self.chapter_state.flash_wrong -= 1; }
-        if self.chapter_state.flash_correct > 0 { self.chapter_state.flash_correct -= 1; }
+        if self.chapter_state.flash_wrong > 0 {
+            self.chapter_state.flash_wrong -= 1;
+        }
+        if self.chapter_state.flash_correct > 0 {
+            self.chapter_state.flash_correct -= 1;
+        }
 
         // ChapterIntro — prime the typewriter if it hasn't started yet
         if let AppState::ChapterIntro { vol_idx, ch_idx } = &self.state
@@ -274,23 +335,45 @@ impl App {
         }
 
         // ChapterComplete — animate but do not auto-advance
-        if let AppState::ChapterComplete { vol_idx, ch_idx, earned_xp: _, anim_tick } = &self.state.clone() {
+        if let AppState::ChapterComplete {
+            vol_idx,
+            ch_idx,
+            earned_xp: _,
+            anim_tick,
+        } = &self.state.clone()
+        {
             let new_tick = anim_tick + 1;
             self.state = AppState::ChapterComplete {
-                vol_idx: *vol_idx, ch_idx: *ch_idx,
-                earned_xp: match &self.state { AppState::ChapterComplete { earned_xp, .. } => *earned_xp, _ => 0 },
+                vol_idx: *vol_idx,
+                ch_idx: *ch_idx,
+                earned_xp: match &self.state {
+                    AppState::ChapterComplete { earned_xp, .. } => *earned_xp,
+                    _ => 0,
+                },
                 anim_tick: new_tick,
             };
         }
 
         // Transition animation frames
-        if let AppState::Transition { next_vol, next_ch, frame } = &self.state.clone() {
+        if let AppState::Transition {
+            next_vol,
+            next_ch,
+            frame,
+        } = &self.state.clone()
+        {
             let new_frame = frame + 1;
             if new_frame >= 30 {
-                self.state = AppState::ChapterIntro { vol_idx: *next_vol, ch_idx: *next_ch };
+                self.state = AppState::ChapterIntro {
+                    vol_idx: *next_vol,
+                    ch_idx: *next_ch,
+                };
                 self.chapter_state = ChapterState::new();
             } else {
-                self.state = AppState::Transition { next_vol: *next_vol, next_ch: *next_ch, frame: new_frame };
+                self.state = AppState::Transition {
+                    next_vol: *next_vol,
+                    next_ch: *next_ch,
+                    frame: new_frame,
+                };
             }
         }
 
@@ -302,14 +385,21 @@ impl App {
     }
 
     fn advance_after_complete(&mut self, vol_idx: usize, ch_idx: usize) {
-        let vol = match self.volumes.get(vol_idx) { Some(v) => v, None => return };
+        let vol = match self.volumes.get(vol_idx) {
+            Some(v) => v,
+            None => return,
+        };
         let next_ch = ch_idx + 1;
         if next_ch < vol.chapters.len() {
             // Next chapter in same volume
             self.sound.play(Sound::Transition);
             self.anim.reset_level_anims();
             self.anim.graph_growth.set(1.0);
-            self.state = AppState::Transition { next_vol: vol_idx, next_ch, frame: 0 };
+            self.state = AppState::Transition {
+                next_vol: vol_idx,
+                next_ch,
+                frame: 0,
+            };
         } else {
             // Volume done
             let next_vol = vol_idx + 1;
@@ -331,7 +421,12 @@ impl App {
             return;
         }
         // Global: M toggles music (except when typing in Playing or LearnLesson)
-        let is_typing = matches!(&self.state, AppState::Playing { .. } | AppState::LearnLesson { .. } | AppState::GitlingsExercise { .. });
+        let is_typing = matches!(
+            &self.state,
+            AppState::Playing { .. }
+                | AppState::LearnLesson { .. }
+                | AppState::GitlingsExercise { .. }
+        );
         if !is_typing && (key.code == KeyCode::Char('m') || key.code == KeyCode::Char('M')) {
             self.toggle_mute();
             return;
@@ -340,12 +435,17 @@ impl App {
         match self.state.clone() {
             AppState::Menu { selected } => self.handle_menu(key, selected),
             AppState::LearnMenu { selected } => self.handle_learn_menu(key, selected),
-            AppState::LearnLesson { lesson_idx, step_idx } => self.handle_learn_lesson(key, lesson_idx, step_idx),
+            AppState::LearnLesson {
+                lesson_idx,
+                step_idx,
+            } => self.handle_learn_lesson(key, lesson_idx, step_idx),
             AppState::GameMenu { selected } => self.handle_game_menu(key, selected),
             AppState::VolumeSelect { selected } => self.handle_volume_select(key, selected),
             AppState::ChapterIntro { vol_idx, ch_idx } => self.handle_intro(key, vol_idx, ch_idx),
             AppState::Playing { vol_idx, ch_idx } => self.handle_playing(key, vol_idx, ch_idx),
-            AppState::ChapterComplete { vol_idx, ch_idx, .. } => self.handle_chapter_complete(key, vol_idx, ch_idx),
+            AppState::ChapterComplete {
+                vol_idx, ch_idx, ..
+            } => self.handle_chapter_complete(key, vol_idx, ch_idx),
             AppState::VolumeComplete { vol_idx } => self.handle_volume_complete(key, vol_idx),
             AppState::GameComplete => self.handle_game_complete(key),
             AppState::GitlingsSubMenu { selected } => self.handle_gitlings_submenu(key, selected),
@@ -371,14 +471,17 @@ impl App {
             KeyCode::Enter | KeyCode::Char(' ') => {
                 self.sound.play(Sound::Correct);
                 match selected {
-                    0 => { // Learn
+                    0 => {
+                        // Learn
                         self.state = AppState::LearnMenu { selected: 0 };
                     }
-                    1 => { // Game
+                    1 => {
+                        // Game
                         self.sound.play(Sound::Correct);
                         self.state = AppState::GameMenu { selected: 0 };
                     }
-                    2 => { // Gitlings
+                    2 => {
+                        // Gitlings
                         self.sound.play(Sound::Correct);
                         self.state = AppState::GitlingsSubMenu { selected: 0 };
                     }
@@ -403,20 +506,32 @@ impl App {
             KeyCode::Enter | KeyCode::Char(' ') => {
                 self.sound.play(Sound::Correct);
                 match selected {
-                    0 => { // New Game
+                    0 => {
+                        // New Game
                         self.save.reset();
                         self.chapter_state = ChapterState::new();
-                        self.state = AppState::ChapterIntro { vol_idx: 0, ch_idx: 0 };
+                        self.state = AppState::ChapterIntro {
+                            vol_idx: 0,
+                            ch_idx: 0,
+                        };
                     }
-                    1 => { // Continue
+                    1 => {
+                        // Continue
                         let vi = self.save.vol_idx.min(self.volumes.len().saturating_sub(1));
                         let ci = self.save.ch_idx.min(
-                            self.volumes.get(vi).map(|v| v.chapters.len().saturating_sub(1)).unwrap_or(0)
+                            self.volumes
+                                .get(vi)
+                                .map(|v| v.chapters.len().saturating_sub(1))
+                                .unwrap_or(0),
                         );
                         self.chapter_state = ChapterState::new();
-                        self.state = AppState::ChapterIntro { vol_idx: vi, ch_idx: ci };
+                        self.state = AppState::ChapterIntro {
+                            vol_idx: vi,
+                            ch_idx: ci,
+                        };
                     }
-                    _ => { // Back
+                    _ => {
+                        // Back
                         self.state = AppState::Menu { selected: 1 };
                     }
                 }
@@ -443,7 +558,10 @@ impl App {
                 self.sound.play(Sound::Correct);
                 self.learn_state = LearnLessonState::new();
                 self.anim.reset_level_anims();
-                self.state = AppState::LearnLesson { lesson_idx: selected, step_idx: 0 };
+                self.state = AppState::LearnLesson {
+                    lesson_idx: selected,
+                    step_idx: 0,
+                };
             }
             KeyCode::Esc | KeyCode::Char('q') => {
                 self.state = AppState::Menu { selected: 0 };
@@ -463,7 +581,9 @@ impl App {
         };
 
         if key.code == KeyCode::Esc || key.code == KeyCode::Char('q') {
-            self.state = AppState::LearnMenu { selected: lesson_idx };
+            self.state = AppState::LearnMenu {
+                selected: lesson_idx,
+            };
             return;
         }
 
@@ -481,10 +601,15 @@ impl App {
             let next_step = step_idx + 1;
             if next_step < lesson.steps.len() {
                 self.learn_state = LearnLessonState::new();
-                self.state = AppState::LearnLesson { lesson_idx, step_idx: next_step };
+                self.state = AppState::LearnLesson {
+                    lesson_idx,
+                    step_idx: next_step,
+                };
             } else {
                 // Lesson complete
-                self.state = AppState::LearnMenu { selected: lesson_idx };
+                self.state = AppState::LearnMenu {
+                    selected: lesson_idx,
+                };
             }
         }
     }
@@ -493,14 +618,21 @@ impl App {
         let max = self.volumes.len().saturating_sub(1);
         match key.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                self.state = AppState::VolumeSelect { selected: selected.saturating_sub(1) };
+                self.state = AppState::VolumeSelect {
+                    selected: selected.saturating_sub(1),
+                };
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                self.state = AppState::VolumeSelect { selected: (selected + 1).min(max) };
+                self.state = AppState::VolumeSelect {
+                    selected: (selected + 1).min(max),
+                };
             }
             KeyCode::Enter | KeyCode::Char(' ') => {
                 self.chapter_state = ChapterState::new();
-                self.state = AppState::ChapterIntro { vol_idx: selected, ch_idx: 0 };
+                self.state = AppState::ChapterIntro {
+                    vol_idx: selected,
+                    ch_idx: 0,
+                };
             }
             KeyCode::Esc | KeyCode::Char('q') => {
                 self.state = AppState::Menu { selected: 0 };
@@ -516,10 +648,11 @@ impl App {
 
             // Initialise sandbox if this chapter uses one
             if let Some(ch) = self.current_chapter(vol_idx, ch_idx)
-                && let Some(setup) = ch.sandbox_setup {
-                    self.chapter_state.sandbox_setup = Some(setup);
-                    self.chapter_state.reset_sandbox();
-                }
+                && let Some(setup) = ch.sandbox_setup
+            {
+                self.chapter_state.sandbox_setup = Some(setup);
+                self.chapter_state.reset_sandbox();
+            }
 
             self.state = AppState::Playing { vol_idx, ch_idx };
         }
@@ -554,7 +687,9 @@ impl App {
         self.sound.play(Sound::KeyPress);
 
         match key.code {
-            KeyCode::Backspace => { self.chapter_state.input.pop(); }
+            KeyCode::Backspace => {
+                self.chapter_state.input.pop();
+            }
             KeyCode::Enter => {
                 let input = self.chapter_state.input.trim().to_string();
                 self.chapter_state.attempts += 1;
@@ -563,7 +698,8 @@ impl App {
 
                 if correct {
                     // Score: base xp, -1 per extra attempt, -1 per hint revealed
-                    let xp = chapter.xp
+                    let xp = chapter
+                        .xp
                         .saturating_sub((self.chapter_state.attempts.saturating_sub(1)) * 2)
                         .saturating_sub(self.chapter_state.hint_level as u32 * 3)
                         .max(chapter.xp / 4); // floor at 25%
@@ -574,7 +710,12 @@ impl App {
                     self.chapter_state.completed = true;
                     self.anim.start_xp_rise(xp);
                     self.toast.show(format!("⚡ +{xp} XP"));
-                    self.state = AppState::ChapterComplete { vol_idx, ch_idx, earned_xp: xp, anim_tick: 0 };
+                    self.state = AppState::ChapterComplete {
+                        vol_idx,
+                        ch_idx,
+                        earned_xp: xp,
+                        anim_tick: 0,
+                    };
                 } else {
                     self.sound.play(Sound::Error);
                     self.chapter_state.flash_wrong = 6;
@@ -583,7 +724,9 @@ impl App {
                     self.chapter_state.reset_sandbox();
                 }
             }
-            KeyCode::Char(c) => { self.chapter_state.input.push(c); }
+            KeyCode::Char(c) => {
+                self.chapter_state.input.push(c);
+            }
             _ => {}
         }
     }
@@ -593,22 +736,31 @@ impl App {
     fn verify_command(&mut self, chapter: &Chapter, input: &str) -> bool {
         // Sandbox path
         if let Some(ref sb) = self.chapter_state.sandbox
-            && let Some(verify) = chapter.sandbox_verify {
-                // Safety: only allow git commands in the sandbox
-                if !input.starts_with("git ") {
-                    return false;
-                }
-                let (_, _, code) = sb.sh(input);
-                if code != 0 {
-                    return false;
-                }
-                return verify(sb);
+            && let Some(verify) = chapter.sandbox_verify
+        {
+            // Safety: only allow git commands in the sandbox
+            if !input.starts_with("git ") {
+                return false;
             }
+            let (_, _, code) = sb.sh(input);
+            if code != 0 {
+                return false;
+            }
+            return verify(sb);
+        }
 
         // Fallback: string matching
         chapter.accepted_answers.iter().any(|a| {
-            let norm_input: String = input.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
-            let norm_ans: String = a.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
+            let norm_input: String = input
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .to_lowercase();
+            let norm_ans: String = a
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .to_lowercase();
             norm_input == norm_ans
         })
     }
@@ -626,7 +778,10 @@ impl App {
                 self.save.ch_idx = 0;
                 self.save.save();
                 self.chapter_state = ChapterState::new();
-                self.state = AppState::ChapterIntro { vol_idx: next, ch_idx: 0 };
+                self.state = AppState::ChapterIntro {
+                    vol_idx: next,
+                    ch_idx: 0,
+                };
             } else {
                 // All volumes complete — pin save at the end
                 self.save.vol_idx = vol_idx;
@@ -671,18 +826,28 @@ impl App {
             KeyCode::Enter | KeyCode::Char(' ') => {
                 self.sound.play(Sound::Correct);
                 match selected {
-                    0 => { // Start Over
+                    0 => {
+                        // Start Over
                         self.gitlings_progress = vec![false; self.gitlings_exercises.len()];
                         self.save.gitlings_progress = self.gitlings_progress.clone();
                         self.save.save();
                         self.state = AppState::GitlingsMenu { selected: 0 };
                     }
-                    1 => { // Continue
-                        self.gitlings_progress.resize(self.gitlings_exercises.len(), false);
-                        let first_incomplete = self.gitlings_progress.iter().position(|&done| !done).unwrap_or(0);
-                        self.state = AppState::GitlingsMenu { selected: first_incomplete };
+                    1 => {
+                        // Continue
+                        self.gitlings_progress
+                            .resize(self.gitlings_exercises.len(), false);
+                        let first_incomplete = self
+                            .gitlings_progress
+                            .iter()
+                            .position(|&done| !done)
+                            .unwrap_or(0);
+                        self.state = AppState::GitlingsMenu {
+                            selected: first_incomplete,
+                        };
                     }
-                    _ => { // Back
+                    _ => {
+                        // Back
                         self.state = AppState::Menu { selected: 2 };
                     }
                 }
@@ -709,10 +874,11 @@ impl App {
                 self.sound.play(Sound::Correct);
                 self.gitlings_state = GitlingsExerciseState::new();
                 if let Some(ex) = self.gitlings_exercises.get(selected)
-                    && let Ok(mut sb) = GitSandbox::new() {
-                        (ex.setup)(&mut sb);
-                        self.gitlings_state.sandbox = Some(sb);
-                    }
+                    && let Ok(mut sb) = GitSandbox::new()
+                {
+                    (ex.setup)(&mut sb);
+                    self.gitlings_state.sandbox = Some(sb);
+                }
                 self.state = AppState::GitlingsExercise { ex_idx: selected };
             }
             KeyCode::Esc | KeyCode::Char('q') => {
@@ -748,7 +914,9 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Backspace => { self.gitlings_state.input.pop(); }
+            KeyCode::Backspace => {
+                self.gitlings_state.input.pop();
+            }
             KeyCode::Enter => {
                 let input = self.gitlings_state.input.trim().to_string();
                 if !input.starts_with("git ") {
@@ -766,7 +934,8 @@ impl App {
                         self.gitlings_state.sandbox = Some(sb);
                     } else {
                         self.sound.play(Sound::Error);
-                        self.gitlings_state.output = "Failed to create exercise sandbox.".to_string();
+                        self.gitlings_state.output =
+                            "Failed to create exercise sandbox.".to_string();
                         self.gitlings_state.output_is_error = true;
                         return;
                     }
@@ -780,7 +949,11 @@ impl App {
                         if err.is_empty() { out } else { err }
                     } else {
                         self.gitlings_state.output_is_error = false;
-                        if out.is_empty() { "(no output)".to_string() } else { out }
+                        if out.is_empty() {
+                            "(no output)".to_string()
+                        } else {
+                            out
+                        }
                     };
                     self.gitlings_state.output = output;
 
@@ -802,13 +975,19 @@ impl App {
                     }
                 }
             }
-            KeyCode::Char(c) => { self.gitlings_state.input.push(c); }
+            KeyCode::Char(c) => {
+                self.gitlings_state.input.push(c);
+            }
             _ => {}
         }
     }
 
     fn handle_coming_soon(&mut self, key: KeyEvent) {
-        if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') || key.code == KeyCode::Esc || key.code == KeyCode::Char('q') {
+        if key.code == KeyCode::Enter
+            || key.code == KeyCode::Char(' ')
+            || key.code == KeyCode::Esc
+            || key.code == KeyCode::Char('q')
+        {
             self.sound.play(Sound::KeyPress);
             self.state = AppState::Menu { selected: 0 };
         }
@@ -835,11 +1014,14 @@ where
         }
 
         // Poll events
-        let timeout = TICK_RATE.checked_sub(last_tick.elapsed()).unwrap_or(Duration::ZERO);
+        let timeout = TICK_RATE
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or(Duration::ZERO);
         if event::poll(timeout)?
-            && let Event::Key(key) = event::read()? {
-                app.handle_key(key);
-            }
+            && let Event::Key(key) = event::read()?
+        {
+            app.handle_key(key);
+        }
 
         // Tick
         if last_tick.elapsed() >= TICK_RATE {

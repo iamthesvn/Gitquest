@@ -23,13 +23,21 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
 
     let horizontal = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Fill(1), Constraint::Length(60), Constraint::Fill(1)])
+        .constraints([
+            Constraint::Fill(1),
+            Constraint::Length(60),
+            Constraint::Fill(1),
+        ])
         .split(area);
 
     // Use nearly full height so more lessons fit
     let vertical = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(1), Constraint::Min(1), Constraint::Length(1)])
+        .constraints([
+            Constraint::Length(1),
+            Constraint::Min(1),
+            Constraint::Length(1),
+        ])
         .split(horizontal[1]);
 
     let menu_area = vertical[1];
@@ -74,7 +82,9 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
         )),
         Line::from(Span::styled(
             "  Master the basics before the pressure hits.",
-            Style::default().fg(Color::Rgb(140, 140, 140)).add_modifier(Modifier::ITALIC),
+            Style::default()
+                .fg(Color::Rgb(140, 140, 140))
+                .add_modifier(Modifier::ITALIC),
         )),
         Line::from(""),
     ];
@@ -91,7 +101,10 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
         let is_selected = i == selected;
         let marker = if is_selected { "▶ " } else { "  " };
         let style = if is_selected {
-            Style::default().fg(ACCENT).add_modifier(Modifier::BOLD).bg(Color::Rgb(30, 15, 10))
+            Style::default()
+                .fg(ACCENT)
+                .add_modifier(Modifier::BOLD)
+                .bg(Color::Rgb(30, 15, 10))
         } else {
             Style::default().fg(Color::Rgb(180, 180, 180))
         };
@@ -123,7 +136,10 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(ACCENT))
-                .title(Span::styled(" GitQuest — Learn Mode ", Style::default().fg(ACCENT).add_modifier(Modifier::BOLD)))
+                .title(Span::styled(
+                    " GitQuest — Learn Mode ",
+                    Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+                ))
                 .title_alignment(Alignment::Center),
         )
         .style(Style::default().bg(BG));
@@ -135,12 +151,10 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
 
 // ── Learn Lesson ──────────────────────────────────────────────────────────────
 
-#[derive(Clone)]
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct LearnLessonState {
     pub showing_result: bool,
 }
-
 
 impl LearnLessonState {
     pub fn new() -> Self {
@@ -148,12 +162,7 @@ impl LearnLessonState {
     }
 }
 
-pub fn draw_learn_lesson(
-    frame: &mut Frame,
-    app: &App,
-    lesson_idx: usize,
-    step_idx: usize,
-) {
+pub fn draw_learn_lesson(frame: &mut Frame, app: &App, lesson_idx: usize, step_idx: usize) {
     let area = frame.area();
     let lesson = match app.lessons.get(lesson_idx) {
         Some(l) => l,
@@ -169,7 +178,11 @@ pub fn draw_learn_lesson(
 
     // Determine which frame set to show
     let use_result = state.showing_result && !step.result_frames.is_empty();
-    let frames = if use_result { step.result_frames } else { step.art_frames };
+    let frames = if use_result {
+        step.result_frames
+    } else {
+        step.art_frames
+    };
 
     // Determine layout: if there's a command and not yet showing result, reserve bottom space
     let has_pending_command = step.command.is_some() && !state.showing_result;
@@ -203,7 +216,9 @@ pub fn draw_learn_lesson(
         Line::from(""),
         Line::from(Span::styled(
             format!("  {}", step.title),
-            Style::default().fg(Color::Rgb(255, 200, 80)).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Rgb(255, 200, 80))
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
     ];
@@ -242,7 +257,10 @@ pub fn draw_learn_lesson(
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::Rgb(50, 50, 80)))
-                .title(Span::styled(" Lesson ", Style::default().fg(ACCENT).add_modifier(Modifier::BOLD))),
+                .title(Span::styled(
+                    " Lesson ",
+                    Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+                )),
         );
     frame.render_widget(left_block, panels[0]);
 
@@ -262,15 +280,16 @@ pub fn draw_learn_lesson(
         )));
     }
 
-
-
     let right_block = Paragraph::new(art_lines)
         .style(Style::default().bg(BG))
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::Rgb(40, 80, 40)))
-                .title(Span::styled(" Demo ", Style::default().fg(Color::Rgb(100, 200, 130)))),
+                .title(Span::styled(
+                    " Demo ",
+                    Style::default().fg(Color::Rgb(100, 200, 130)),
+                )),
         );
     frame.render_widget(right_block, panels[1]);
 
@@ -283,18 +302,20 @@ pub fn draw_learn_lesson(
         let cmd_area = bottom[1];
 
         let cmd_line = Line::from(vec![
-            Span::styled("  $ ", Style::default().fg(GREEN).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "  $ ",
+                Style::default().fg(GREEN).add_modifier(Modifier::BOLD),
+            ),
             Span::styled(step.command.unwrap(), Style::default().fg(Color::White)),
         ]);
 
-        let cmd_widget = Paragraph::new(cmd_line)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(ACCENT))
-                    .title(Span::styled(" Command ", Style::default().fg(ACCENT)))
-                    .style(Style::default().bg(Color::Rgb(8, 8, 14))),
-            );
+        let cmd_widget = Paragraph::new(cmd_line).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(ACCENT))
+                .title(Span::styled(" Command ", Style::default().fg(ACCENT)))
+                .style(Style::default().bg(Color::Rgb(8, 8, 14))),
+        );
         frame.render_widget(cmd_widget, cmd_area);
     }
 
@@ -307,19 +328,24 @@ pub fn draw_learn_lesson(
         let cmd_area = bottom[1];
 
         let cmd_line = Line::from(vec![
-            Span::styled("  $ ", Style::default().fg(GREEN).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "  $ ",
+                Style::default().fg(GREEN).add_modifier(Modifier::BOLD),
+            ),
             Span::styled(step.command.unwrap(), Style::default().fg(Color::White)),
-            Span::styled("   ✓", Style::default().fg(GREEN).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "   ✓",
+                Style::default().fg(GREEN).add_modifier(Modifier::BOLD),
+            ),
         ]);
 
-        let cmd_widget = Paragraph::new(cmd_line)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(GREEN))
-                    .title(Span::styled(" Command ", Style::default().fg(GREEN)))
-                    .style(Style::default().bg(Color::Rgb(8, 14, 8))),
-            );
+        let cmd_widget = Paragraph::new(cmd_line).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(GREEN))
+                .title(Span::styled(" Command ", Style::default().fg(GREEN)))
+                .style(Style::default().bg(Color::Rgb(8, 14, 8))),
+        );
         frame.render_widget(cmd_widget, cmd_area);
     }
 }

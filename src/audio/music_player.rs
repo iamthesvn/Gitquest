@@ -1,6 +1,5 @@
-
 #[cfg(feature = "audio")]
-use rodio::{buffer::SamplesBuffer, OutputStream, OutputStreamHandle, Sink};
+use rodio::{OutputStream, OutputStreamHandle, Sink, buffer::SamplesBuffer};
 
 // ─── constants ────────────────────────────────────────────────────────────────
 const SAMPLE_RATE: u32 = 44_100;
@@ -40,7 +39,10 @@ impl MusicPlayer {
             }
         }
         #[cfg(not(feature = "audio"))]
-        Self { muted: false, current_track: 0 }
+        Self {
+            muted: false,
+            current_track: 0,
+        }
     }
 
     pub fn tick(&mut self) {
@@ -64,7 +66,9 @@ impl MusicPlayer {
         #[cfg(feature = "audio")]
         {
             if self.muted {
-                if let Some(s) = &self.sink { s.pause(); }
+                if let Some(s) = &self.sink {
+                    s.pause();
+                }
             } else {
                 match &self.sink {
                     Some(s) if !s.empty() => s.play(),
@@ -100,9 +104,9 @@ const TRACK_COUNT: usize = 3;
 
 fn render_track(idx: usize) -> Vec<f32> {
     match idx {
-        0 => render_boot_sequence(),   // C minor — mysterious, dark ambient
-        1 => render_void_wanderer(),   // A minor pentatonic — hopeful space
-        2 => render_mission_critical(),// D minor — tense, driving
+        0 => render_boot_sequence(),    // C minor — mysterious, dark ambient
+        1 => render_void_wanderer(),    // A minor pentatonic — hopeful space
+        2 => render_mission_critical(), // D minor — tense, driving
         _ => render_boot_sequence(),
     }
 }
@@ -112,10 +116,10 @@ fn render_track(idx: usize) -> Vec<f32> {
 /// Multi-harmonic "organ" tone: fundamental + 2nd + 3rd harmonics
 fn organ(freq: f32, t: f32, amp: f32) -> f32 {
     let tw = 2.0 * std::f32::consts::PI;
-    (  (tw * freq * t).sin() * 0.5
-     + (tw * freq * 2.0 * t).sin() * 0.25
-     + (tw * freq * 3.0 * t).sin() * 0.125
-    ) * amp
+    ((tw * freq * t).sin() * 0.5
+        + (tw * freq * 2.0 * t).sin() * 0.25
+        + (tw * freq * 3.0 * t).sin() * 0.125)
+        * amp
 }
 
 /// Soft bell: sine with exponential decay shaped for short notes
@@ -129,10 +133,10 @@ fn bell(freq: f32, t: f32, note_dur: f32, amp: f32) -> f32 {
 fn pad(freq: f32, t: f32, amp: f32) -> f32 {
     let tw = 2.0 * std::f32::consts::PI;
     let detune = freq * 0.008;
-    (   (tw * freq * t).sin()
-      + (tw * (freq + detune) * t).sin() * 0.7
-      + (tw * (freq - detune * 0.5) * t).sin() * 0.5
-    ) * (amp / 2.2)
+    ((tw * freq * t).sin()
+        + (tw * (freq + detune) * t).sin() * 0.7
+        + (tw * (freq - detune * 0.5) * t).sin() * 0.5)
+        * (amp / 2.2)
 }
 
 /// Pulse accent: short sine blip on beat divisions
@@ -154,14 +158,14 @@ fn render_boot_sequence() -> Vec<f32> {
     // C minor scale degrees: C Eb G Bb C(oct)
     let scale: &[(f32, f32)] = &[
         // (freq_hz, start_beat)
-        (261.63, 0.0),  // C4
-        (311.13, 1.0),  // Eb4
-        (392.00, 2.0),  // G4
-        (466.16, 3.0),  // Bb4
-        (523.25, 4.0),  // C5
-        (392.00, 5.0),  // G4
-        (311.13, 6.0),  // Eb4
-        (261.63, 7.0),  // C4
+        (261.63, 0.0), // C4
+        (311.13, 1.0), // Eb4
+        (392.00, 2.0), // G4
+        (466.16, 3.0), // Bb4
+        (523.25, 4.0), // C5
+        (392.00, 5.0), // G4
+        (311.13, 6.0), // Eb4
+        (261.63, 7.0), // C4
         // repeat with variation
         (196.00, 8.0),  // G3
         (261.63, 9.0),  // C4
@@ -196,7 +200,11 @@ fn render_boot_sequence() -> Vec<f32> {
 
         // Pad chord every 4 beats (Cm chord: C Eb G)
         let bar_phase = beat_abs % 4.0;
-        let pad_env = if bar_phase < 3.5 { 1.0 } else { (4.0 - bar_phase) / 0.5 };
+        let pad_env = if bar_phase < 3.5 {
+            1.0
+        } else {
+            (4.0 - bar_phase) / 0.5
+        };
         s += pad(130.81, t_abs, 0.14 * pad_env); // C3
         s += pad(155.56, t_abs, 0.10 * pad_env); // Eb3
         s += pad(196.00, t_abs, 0.10 * pad_env); // G3
@@ -271,7 +279,11 @@ fn render_void_wanderer() -> Vec<f32> {
 
         // Pad: Am chord (A C E)
         let bar_phase = beat_abs % 4.0;
-        let pad_env = if bar_phase < 3.6 { 1.0 } else { (4.0 - bar_phase) / 0.4 };
+        let pad_env = if bar_phase < 3.6 {
+            1.0
+        } else {
+            (4.0 - bar_phase) / 0.4
+        };
         s += pad(110.0, t_abs, 0.12 * pad_env);
         s += pad(130.81, t_abs, 0.09 * pad_env);
         s += pad(164.81, t_abs, 0.09 * pad_env);
@@ -308,22 +320,22 @@ fn render_mission_critical() -> Vec<f32> {
 
     // D minor: D F A C D(oct)
     let melody: &[(f32, f32)] = &[
-        (293.66, 0.0),  // D4
-        (349.23, 0.5),  // F4
-        (440.00, 1.0),  // A4
-        (523.25, 1.5),  // C5
-        (587.33, 2.0),  // D5
-        (523.25, 2.5),  // C5
-        (440.00, 3.0),  // A4
-        (349.23, 3.5),  // F4
-        (293.66, 4.0),  // D4
-        (220.00, 4.5),  // A3
-        (261.63, 5.0),  // C4
-        (293.66, 5.5),  // D4
-        (349.23, 6.0),  // F4
-        (440.00, 6.5),  // A4
-        (523.25, 7.0),  // C5
-        (440.00, 7.5),  // A4
+        (293.66, 0.0), // D4
+        (349.23, 0.5), // F4
+        (440.00, 1.0), // A4
+        (523.25, 1.5), // C5
+        (587.33, 2.0), // D5
+        (523.25, 2.5), // C5
+        (440.00, 3.0), // A4
+        (349.23, 3.5), // F4
+        (293.66, 4.0), // D4
+        (220.00, 4.5), // A3
+        (261.63, 5.0), // C4
+        (293.66, 5.5), // D4
+        (349.23, 6.0), // F4
+        (440.00, 6.5), // A4
+        (523.25, 7.0), // C5
+        (440.00, 7.5), // A4
         // Second half - higher register
         (587.33, 8.0),  // D5
         (698.46, 8.5),  // F5
@@ -367,7 +379,11 @@ fn render_mission_critical() -> Vec<f32> {
 
         // Dm pad (D F A)
         let bar_phase = beat_abs % 4.0;
-        let pad_env = if bar_phase < 3.7 { 1.0 } else { (4.0 - bar_phase) / 0.3 };
+        let pad_env = if bar_phase < 3.7 {
+            1.0
+        } else {
+            (4.0 - bar_phase) / 0.3
+        };
         s += pad(146.83, t_abs, 0.13 * pad_env); // D3
         s += pad(174.61, t_abs, 0.10 * pad_env); // F3
         s += pad(220.00, t_abs, 0.10 * pad_env); // A3

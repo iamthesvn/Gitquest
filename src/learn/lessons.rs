@@ -76,16 +76,14 @@ fn lesson_init() -> Lesson {
                 title: "Run the command",
                 text: "This creates the .git directory and turns the folder into a repository.",
                 command: Some("git init"),
-                art_frames: &[
-                    concat!(
-                        "                          \n",
-                        "     📁 my-project/       \n",
-                        "                          \n",
-                        "     $ git init           \n",
-                        "     Initialized repo.    \n",
-                        "                          "
-                    ),
-                ],
+                art_frames: &[concat!(
+                    "                          \n",
+                    "     📁 my-project/       \n",
+                    "                          \n",
+                    "     $ git init           \n",
+                    "     Initialized repo.    \n",
+                    "                          "
+                )],
                 result_frames: &[
                     concat!(
                         "                          \n",
@@ -145,15 +143,13 @@ fn lesson_config() -> Lesson {
                 title: "Run the command",
                 text: "This sets your name globally so every commit you make is properly attributed.",
                 command: Some("git config --global user.name \"Alex Chen\""),
-                art_frames: &[
-                    concat!(
-                        "  ┌────────────────────┐ \n",
-                        "  │  $ git config ...  │ \n",
-                        "  │                    │ \n",
-                        "  │  Setting name...   │ \n",
-                        "  └────────────────────┘ "
-                    ),
-                ],
+                art_frames: &[concat!(
+                    "  ┌────────────────────┐ \n",
+                    "  │  $ git config ...  │ \n",
+                    "  │                    │ \n",
+                    "  │  Setting name...   │ \n",
+                    "  └────────────────────┘ "
+                )],
                 result_frames: &[
                     concat!(
                         "  ┌────────────────────┐ \n",
@@ -216,28 +212,24 @@ fn lesson_add() -> Lesson {
                 title: "Run the command",
                 text: "This stages both files, preparing them to be committed. .DS_Store is left unstaged.",
                 command: Some("git add index.html styles.css"),
-                art_frames: &[
-                    concat!(
-                        "  Working Dir          \n",
-                        "  📄 index.html  [M]   \n",
-                        "  📄 styles.css  [M]   \n",
-                        "  🗑 .DS_Store   [?]   \n",
-                        "                       \n",
-                        "  $ git add ...        \n",
-                        "                       "
-                    ),
-                ],
-                result_frames: &[
-                    concat!(
-                        "  Working Dir          \n",
-                        "  🗑 .DS_Store   [?]   \n",
-                        "                       \n",
-                        "  Staging:             \n",
-                        "  📄 index.html  ✓     \n",
-                        "  📄 styles.css  ✓     \n",
-                        "  ✓ Staged 2 files     "
-                    ),
-                ],
+                art_frames: &[concat!(
+                    "  Working Dir          \n",
+                    "  📄 index.html  [M]   \n",
+                    "  📄 styles.css  [M]   \n",
+                    "  🗑 .DS_Store   [?]   \n",
+                    "                       \n",
+                    "  $ git add ...        \n",
+                    "                       "
+                )],
+                result_frames: &[concat!(
+                    "  Working Dir          \n",
+                    "  🗑 .DS_Store   [?]   \n",
+                    "                       \n",
+                    "  Staging:             \n",
+                    "  📄 index.html  ✓     \n",
+                    "  📄 styles.css  ✓     \n",
+                    "  ✓ Staged 2 files     "
+                )],
             },
         ],
     }
@@ -284,17 +276,15 @@ fn lesson_commit() -> Lesson {
                 title: "Run the command",
                 text: "This creates a new commit with your message, permanently saving the staged changes.",
                 command: Some("git commit -m \"Add landing page styles and layout\""),
-                art_frames: &[
-                    concat!(
-                        "  main                 \n",
-                        "    ●──●               \n",
-                        "   c1  c2              \n",
-                        "        ↑              \n",
-                        "       HEAD            \n",
-                        "                       \n",
-                        "  $ git commit -m ...  "
-                    ),
-                ],
+                art_frames: &[concat!(
+                    "  main                 \n",
+                    "    ●──●               \n",
+                    "   c1  c2              \n",
+                    "        ↑              \n",
+                    "       HEAD            \n",
+                    "                       \n",
+                    "  $ git commit -m ...  "
+                )],
                 result_frames: &[
                     concat!(
                         "                       \n",
@@ -355,17 +345,15 @@ fn lesson_push() -> Lesson {
                 title: "Run the command",
                 text: "This uploads your local commits to the remote, backing them up and sharing them with the team.",
                 command: Some("git push origin main"),
-                art_frames: &[
-                    concat!(
-                        "  LOCAL                REMOTE              \n",
-                        "  main                 origin/main         \n",
-                        "    ●──●──●            (empty)             \n",
-                        "   c1 c2 c3                                \n",
-                        "            ↑                              \n",
-                        "         HEAD                              \n",
-                        "  $ git push ...       "
-                    ),
-                ],
+                art_frames: &[concat!(
+                    "  LOCAL                REMOTE              \n",
+                    "  main                 origin/main         \n",
+                    "    ●──●──●            (empty)             \n",
+                    "   c1 c2 c3                                \n",
+                    "            ↑                              \n",
+                    "         HEAD                              \n",
+                    "  $ git push ...       "
+                )],
                 result_frames: &[
                     concat!(
                         "  LOCAL                REMOTE              \n",
@@ -438,18 +426,16 @@ fn lesson_branch() -> Lesson {
                 title: "Run the command",
                 text: "This creates a new branch called 'feature-login' that points to the current commit. HEAD stays on main until you switch branches.",
                 command: Some("git branch feature-login"),
-                art_frames: &[
-                    concat!(
-                        "                       \n",
-                        "  main                 \n",
-                        "    ●──●──●            \n",
-                        "   c1 c2  c3           \n",
-                        "            ↑          \n",
-                        "         HEAD          \n",
-                        "                       \n",
-                        "  $ git branch ...     "
-                    ),
-                ],
+                art_frames: &[concat!(
+                    "                       \n",
+                    "  main                 \n",
+                    "    ●──●──●            \n",
+                    "   c1 c2  c3           \n",
+                    "            ↑          \n",
+                    "         HEAD          \n",
+                    "                       \n",
+                    "  $ git branch ...     "
+                )],
                 result_frames: &[
                     concat!(
                         "                       \n",
@@ -475,7 +461,6 @@ fn lesson_branch() -> Lesson {
         ],
     }
 }
-
 
 fn lesson_switch() -> Lesson {
     Lesson {
@@ -512,17 +497,15 @@ fn lesson_switch() -> Lesson {
                 title: "Run the command",
                 text: "This moves HEAD onto the feature-login branch. Any new commits you make now will extend that branch, not main.",
                 command: Some("git switch feature-login"),
-                art_frames: &[
-                    concat!(
-                        "  main      feature-login\n",
-                        "    ●──●──●              \n",
-                        "   c1 c2  c3             \n",
-                        "            ↑            \n",
-                        "         HEAD            \n",
-                        "                         \n",
-                        "  $ git switch ...       "
-                    ),
-                ],
+                art_frames: &[concat!(
+                    "  main      feature-login\n",
+                    "    ●──●──●              \n",
+                    "   c1 c2  c3             \n",
+                    "            ↑            \n",
+                    "         HEAD            \n",
+                    "                         \n",
+                    "  $ git switch ...       "
+                )],
                 result_frames: &[
                     concat!(
                         "  main      feature-login\n",
@@ -596,19 +579,17 @@ fn lesson_merge() -> Lesson {
                 title: "Run the command",
                 text: "This merges feature-login into the current branch (main). The merge commit m1 now has two parents: c3 and c5.",
                 command: Some("git merge feature-login"),
-                art_frames: &[
-                    concat!(
-                        "  main                   \n",
-                        "    ●──●──●              \n",
-                        "   c1 c2  c3             \n",
-                        "            ↑            \n",
-                        "         HEAD            \n",
-                        "              /           \n",
-                        "               ●──●      \n",
-                        "              c4  c5     \n",
-                        "  $ git merge ...        "
-                    ),
-                ],
+                art_frames: &[concat!(
+                    "  main                   \n",
+                    "    ●──●──●              \n",
+                    "   c1 c2  c3             \n",
+                    "            ↑            \n",
+                    "         HEAD            \n",
+                    "              /           \n",
+                    "               ●──●      \n",
+                    "              c4  c5     \n",
+                    "  $ git merge ...        "
+                )],
                 result_frames: &[
                     concat!(
                         "  main                   \n",
@@ -673,16 +654,14 @@ fn lesson_status() -> Lesson {
                 title: "Run the command",
                 text: "This prints the current repository state: branch name, staged changes, unstaged changes, and untracked files.",
                 command: Some("git status"),
-                art_frames: &[
-                    concat!(
-                        "  📁 project/            \n",
-                        "  📄 index.html  [M]    \n",
-                        "  📄 styles.css  [M]    \n",
-                        "  🗑 .DS_Store   [?]    \n",
-                        "                        \n",
-                        "  $ git status          "
-                    ),
-                ],
+                art_frames: &[concat!(
+                    "  📁 project/            \n",
+                    "  📄 index.html  [M]    \n",
+                    "  📄 styles.css  [M]    \n",
+                    "  🗑 .DS_Store   [?]    \n",
+                    "                        \n",
+                    "  $ git status          "
+                )],
                 result_frames: &[
                     concat!(
                         "  On branch main         \n",
@@ -741,17 +720,15 @@ fn lesson_log() -> Lesson {
                 title: "Run the command",
                 text: "This displays the commit history in a compact one-line-per-commit format, newest first.",
                 command: Some("git log --oneline"),
-                art_frames: &[
-                    concat!(
-                        "  main                   \n",
-                        "    ●──●──●──●           \n",
-                        "   c1 c2  c3  c4         \n",
-                        "               ↑         \n",
-                        "            HEAD         \n",
-                        "                        \n",
-                        "  $ git log --oneline   "
-                    ),
-                ],
+                art_frames: &[concat!(
+                    "  main                   \n",
+                    "    ●──●──●──●           \n",
+                    "   c1 c2  c3  c4         \n",
+                    "               ↑         \n",
+                    "            HEAD         \n",
+                    "                        \n",
+                    "  $ git log --oneline   "
+                )],
                 result_frames: &[
                     concat!(
                         "  a1b2c3d Add navbar    \n",
@@ -808,17 +785,15 @@ fn lesson_pull() -> Lesson {
                 title: "Run the command",
                 text: "This fetches the latest commits from origin/main and merges them into your local main. Your local branch is now up to date.",
                 command: Some("git pull origin main"),
-                art_frames: &[
-                    concat!(
-                        "  LOCAL                REMOTE              \n",
-                        "  main                 origin/main         \n",
-                        "    ●──●──●            ●──●──●──●         \n",
-                        "   c1 c2 c3            c1 c2 c3 c4        \n",
-                        "            ↑                              \n",
-                        "         HEAD                              \n",
-                        "  $ git pull ...        "
-                    ),
-                ],
+                art_frames: &[concat!(
+                    "  LOCAL                REMOTE              \n",
+                    "  main                 origin/main         \n",
+                    "    ●──●──●            ●──●──●──●         \n",
+                    "   c1 c2 c3            c1 c2 c3 c4        \n",
+                    "            ↑                              \n",
+                    "         HEAD                              \n",
+                    "  $ git pull ...        "
+                )],
                 result_frames: &[
                     concat!(
                         "  LOCAL                REMOTE              \n",

@@ -43,11 +43,11 @@ fn verify_init(sb: &GitSandbox) -> bool {
 
 pub fn rank_title(xp: u32) -> &'static str {
     match xp {
-        0..=49    => "Intern",
-        50..=149  => "Junior Dev",
+        0..=49 => "Intern",
+        50..=149 => "Junior Dev",
         150..=299 => "Mid-Level Engineer",
         300..=499 => "Senior Dev",
-        _         => "Principal Engineer",
+        _ => "Principal Engineer",
     }
 }
 
@@ -92,10 +92,7 @@ fn volume_one() -> Volume {
                     "Head into ~/projects/novatech and initialise a git repo so we can get you connected to the team.",
                 ],
                 task_prompt: "Initialise a new git repository in the current directory.",
-                accepted_answers: &[
-                    "git init",
-                    "git init .",
-                ],
+                accepted_answers: &["git init", "git init ."],
                 hints: &[
                     "Think about the very first command you'd ever run on a brand-new project.",
                     "The command starts with 'git' and sets up a local repository.",
@@ -106,7 +103,6 @@ fn volume_one() -> Volume {
                 sandbox_setup: Some(setup_empty),
                 sandbox_verify: Some(verify_init),
             },
-
             // ---------------------------------------------------------------
             // Chapter 2 — The Config Chaos
             // ---------------------------------------------------------------
@@ -143,10 +139,9 @@ fn volume_one() -> Volume {
                 ],
                 success_message: "Identity saved! Your commits will now proudly carry your name. Hyett checks the log and smiles.",
                 xp: 10,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 3 — The Missing Files
             // ---------------------------------------------------------------
@@ -185,10 +180,9 @@ fn volume_one() -> Volume {
                 ],
                 success_message: "Files staged! Preston exhales audibly. 'Okay. Okay we're fine. We're totally fine.'",
                 xp: 10,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 4 — The First Commit
             // ---------------------------------------------------------------
@@ -232,10 +226,9 @@ fn volume_one() -> Volume {
                 ],
                 success_message: "Committed! Hyett reads the message and nods. 'Clean. That's how it's done, Alex.'",
                 xp: 15,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 5 — The Repo Goes Remote
             // ---------------------------------------------------------------
@@ -271,8 +264,8 @@ fn volume_one() -> Volume {
                 ],
                 success_message: "Pushed! Wanstrath refreshes the GitHub page and pumps his fist. 'Beautiful. The future is now.'",
                 xp: 15,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
         ],
     }
@@ -311,10 +304,7 @@ fn volume_two() -> Volume {
                     "Create the branch AND switch to it in one command. Clock is ticking.",
                 ],
                 task_prompt: "Create a new branch called 'hotfix' and switch to it immediately.",
-                accepted_answers: &[
-                    "git checkout -b hotfix",
-                    "git switch -c hotfix",
-                ],
+                accepted_answers: &["git checkout -b hotfix", "git switch -c hotfix"],
                 hints: &[
                     "You need to create a new branch and immediately start working on it.",
                     "There's a single command that both creates a branch and checks it out at the same time.",
@@ -322,10 +312,9 @@ fn volume_two() -> Volume {
                 ],
                 success_message: "Branch 'hotfix' created and checked out. Hyett: 'Good. Now we work fast.'",
                 xp: 20,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 2 — The Stash
             // ---------------------------------------------------------------
@@ -349,10 +338,7 @@ fn volume_two() -> Volume {
                     "There's a git command that shelves your changes temporarily so you can context-switch. Use it. PLEASE.",
                 ],
                 task_prompt: "Save your unfinished work temporarily without making a commit.",
-                accepted_answers: &[
-                    "git stash",
-                    "git stash push",
-                ],
+                accepted_answers: &["git stash", "git stash push"],
                 hints: &[
                     "You need a way to temporarily set aside your current changes without committing them.",
                     "Git has a command specifically for shelving work-in-progress changes.",
@@ -360,10 +346,9 @@ fn volume_two() -> Volume {
                 ],
                 success_message: "Changes stashed! Your WIP is safely tucked away. You switch to hotfix, clean slate.",
                 xp: 20,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 3 — The Log Detective
             // ---------------------------------------------------------------
@@ -401,10 +386,9 @@ fn volume_two() -> Volume {
                 ],
                 success_message: "Log printed. Chacon leans in, squinting. 'There. That commit. 47 minutes ago. Who is jd_pm??'",
                 xp: 20,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 4 — The Revert
             // ---------------------------------------------------------------
@@ -428,10 +412,7 @@ fn volume_two() -> Volume {
                     "Revert HEAD. That's the latest commit. Do it now and let's get prod back up.",
                 ],
                 task_prompt: "Safely undo the most recent commit by creating a new revert commit.",
-                accepted_answers: &[
-                    "git revert HEAD",
-                    "git revert HEAD~1",
-                ],
+                accepted_answers: &["git revert HEAD", "git revert HEAD~1"],
                 hints: &[
                     "You want to undo the last commit without destroying the git history.",
                     "'git revert' creates a new commit that reverses the changes of a specific commit.",
@@ -439,10 +420,9 @@ fn volume_two() -> Volume {
                 ],
                 success_message: "Reverted! A new commit appears, neatly undoing the damage. Chacon: 'Not bad. Prod is recovering.'",
                 xp: 25,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 5 — The Merge
             // ---------------------------------------------------------------
@@ -466,10 +446,7 @@ fn volume_two() -> Volume {
                     "After this, the site should be back to green. Every monitor in the office is watching.",
                 ],
                 task_prompt: "Merge the 'hotfix' branch into the current branch (main).",
-                accepted_answers: &[
-                    "git merge hotfix",
-                    "git merge --no-ff hotfix",
-                ],
+                accepted_answers: &["git merge hotfix", "git merge --no-ff hotfix"],
                 hints: &[
                     "You want to bring the changes from another branch into your current branch.",
                     "'git merge' integrates changes from one branch into another.",
@@ -477,8 +454,8 @@ fn volume_two() -> Volume {
                 ],
                 success_message: "Merged! The monitors flip to green. The office erupts. Preston cries a little. Hyett quietly saves the day.",
                 xp: 25,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
         ],
     }
@@ -517,10 +494,7 @@ fn volume_three() -> Volume {
                     "Don't try to be clever. Just pull. We'll untangle the conflict markers after.",
                 ],
                 task_prompt: "Pull the latest changes from origin main into your current branch.",
-                accepted_answers: &[
-                    "git pull origin main",
-                    "git pull",
-                ],
+                accepted_answers: &["git pull origin main", "git pull"],
                 hints: &[
                     "You need to download and integrate the latest remote changes into your branch.",
                     "'git pull' fetches from a remote and merges it into your current branch.",
@@ -528,10 +502,9 @@ fn volume_three() -> Volume {
                 ],
                 success_message: "Pulled. Conflict markers appear in README.md. Chacon crosses his arms. 'Now the real work begins.'",
                 xp: 30,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 2 — The Blame Game
             // ---------------------------------------------------------------
@@ -555,10 +528,7 @@ fn volume_three() -> Volume {
                     "Is there a git command that shows which person wrote each line of a file? That sounds like exactly what we need.",
                 ],
                 task_prompt: "Show which commit and author last modified each line of auth.js.",
-                accepted_answers: &[
-                    "git blame auth.js",
-                    "git blame -L 1,50 auth.js",
-                ],
+                accepted_answers: &["git blame auth.js", "git blame -L 1,50 auth.js"],
                 hints: &[
                     "You need a command that shows authorship at the line level inside a specific file.",
                     "There's a git command named after the act of assigning responsibility.",
@@ -566,10 +536,9 @@ fn volume_three() -> Volume {
                 ],
                 success_message: "Output scrolls. Wanstrath squints at the screen. 'Huh. I... didn't expect that name.' An awkward silence falls.",
                 xp: 30,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 3 — The Cherry Pick
             // ---------------------------------------------------------------
@@ -593,10 +562,7 @@ fn volume_three() -> Volume {
                     "Apply only that commit onto main. Leave everything else on dev where it belongs.",
                 ],
                 task_prompt: "Apply only the specific commit a1b2c3d from another branch onto the current branch.",
-                accepted_answers: &[
-                    "git cherry-pick a1b2c3d",
-                    "git cherry-pick a1b2c3",
-                ],
+                accepted_answers: &["git cherry-pick a1b2c3d", "git cherry-pick a1b2c3"],
                 hints: &[
                     "You want to apply a single specific commit from another branch without merging the whole thing.",
                     "There's a git command that lets you pluck one commit and replay it on your current branch.",
@@ -604,10 +570,9 @@ fn volume_three() -> Volume {
                 ],
                 success_message: "Cherry-picked! The auth fix lands cleanly on main. Hyett: 'Surgical. That's exactly how you do it.'",
                 xp: 35,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 4 — The Cleanup
             // ---------------------------------------------------------------
@@ -632,10 +597,7 @@ fn volume_three() -> Volume {
                     "Delete it. Locally. If it's already merged, this should be safe and easy.",
                 ],
                 task_prompt: "Delete the local branch named 'hotfix' which has already been merged.",
-                accepted_answers: &[
-                    "git branch -d hotfix",
-                    "git branch -D hotfix",
-                ],
+                accepted_answers: &["git branch -d hotfix", "git branch -D hotfix"],
                 hints: &[
                     "You need to remove a local branch that is no longer needed.",
                     "'git branch' with a certain flag lets you delete a branch by name.",
@@ -643,10 +605,9 @@ fn volume_three() -> Volume {
                 ],
                 success_message: "Branch deleted. Chacon exhales slowly. 'One down, five to go. Baby steps, Alex. Baby steps.'",
                 xp: 30,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 5 — The Tag
             // ---------------------------------------------------------------
@@ -684,8 +645,8 @@ fn volume_three() -> Volume {
                 ],
                 success_message: "Tagged! v1.0 is immortalised in the git history. Wanstrath pops a bottle of sparkling water. 'To the future!'",
                 xp: 35,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
         ],
     }
@@ -725,10 +686,7 @@ fn volume_four() -> Volume {
                     "Run a diff. Read it line by line. If it still makes sense when you're awake, THEN you commit.",
                 ],
                 task_prompt: "Show the unstaged line-by-line changes in the working directory.",
-                accepted_answers: &[
-                    "git diff",
-                    "git diff HEAD",
-                ],
+                accepted_answers: &["git diff", "git diff HEAD"],
                 hints: &[
                     "You want to see exactly what changed in your files before committing.",
                     "The basic command for comparing your working directory against the staging area / HEAD.",
@@ -736,10 +694,9 @@ fn volume_four() -> Volume {
                 ],
                 success_message: "Diff scrolls up. Hyett squints. 'Okay... that actually looks sensible. One small win for sleep-deprived engineers.'",
                 xp: 30,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 2 — The Staged Mistake
             // ---------------------------------------------------------------
@@ -765,10 +722,7 @@ fn volume_four() -> Volume {
                     "This is the difference between 'I think I staged the right stuff' and 'I KNOW I staged the right stuff.'",
                 ],
                 task_prompt: "Show the changes that are currently staged for commit (staged vs HEAD).",
-                accepted_answers: &[
-                    "git diff --cached",
-                    "git diff --staged",
-                ],
+                accepted_answers: &["git diff --cached", "git diff --staged"],
                 hints: &[
                     "You need to compare the staging area against the last commit.",
                     "There's a flag for 'cached' or 'staged' that shows exactly what will go into the next commit.",
@@ -776,10 +730,9 @@ fn volume_four() -> Volume {
                 ],
                 success_message: "The staged diff reveals the test key. Hyett: 'Unstage that. Fix it. Then commit. Sleep can wait five more minutes.'",
                 xp: 30,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 3 — The Wall of Text
             // ---------------------------------------------------------------
@@ -805,10 +758,7 @@ fn volume_four() -> Volume {
                     "There's a flag for that. Use it. Save both of us some time.",
                 ],
                 task_prompt: "Show a statistical summary of changed files with insertion and deletion counts.",
-                accepted_answers: &[
-                    "git diff --stat",
-                    "git diff --stat HEAD",
-                ],
+                accepted_answers: &["git diff --stat", "git diff --stat HEAD"],
                 hints: &[
                     "You want a high-level overview: which files changed and by how much.",
                     "Git has a flag that prints a table of files with insertion/deletion counts instead of line-by-line diffs.",
@@ -816,10 +766,9 @@ fn volume_four() -> Volume {
                 ],
                 success_message: "The stats pop up. Chacon nods slowly. 'Five files, mostly README. Okay. I can live with that.'",
                 xp: 35,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 4 — The Scope Creep
             // ---------------------------------------------------------------
@@ -844,10 +793,7 @@ fn volume_four() -> Volume {
                     "If I have to scroll through another thousand-line diff I am going to cry into my ergonomic keyboard.",
                 ],
                 task_prompt: "List only the file paths that changed, with no diff content.",
-                accepted_answers: &[
-                    "git diff --name-only",
-                    "git diff --name-only HEAD",
-                ],
+                accepted_answers: &["git diff --name-only", "git diff --name-only HEAD"],
                 hints: &[
                     "You want just the filenames, nothing else.",
                     "Git has a flag that suppresses all diff content and prints only the affected file paths.",
@@ -855,10 +801,9 @@ fn volume_four() -> Volume {
                 ],
                 success_message: "A clean list of five files. Preston copies it into a spreadsheet. 'Beautiful. No crying today.'",
                 xp: 35,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
-
             // ---------------------------------------------------------------
             // Chapter 5 — The Audit Trail
             // ---------------------------------------------------------------
@@ -883,10 +828,7 @@ fn volume_four() -> Volume {
                     "There's a git command that shows the file list WITH a letter telling you what happened to each one. A for Added, M for Modified, you get the idea.",
                 ],
                 task_prompt: "List changed files with their change type (Added, Modified, Deleted, Renamed).",
-                accepted_answers: &[
-                    "git diff --name-status",
-                    "git diff --name-status HEAD",
-                ],
+                accepted_answers: &["git diff --name-status", "git diff --name-status HEAD"],
                 hints: &[
                     "You need filenames paired with a single-letter status code describing what happened.",
                     "Git has a flag that outputs exactly that: A, M, D, R, etc. for each changed file.",
@@ -894,8 +836,8 @@ fn volume_four() -> Volume {
                 ],
                 success_message: "The auditor checks her list. Wanstrath whispers, 'She smiled. I have never seen her smile.' Victory.",
                 xp: 40,
-    sandbox_setup: None,
-    sandbox_verify: None,
+                sandbox_setup: None,
+                sandbox_verify: None,
             },
         ],
     }

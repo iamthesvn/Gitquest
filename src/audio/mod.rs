@@ -38,7 +38,10 @@ impl SoundManager {
                     _stream: Some(stream),
                     handle: Some(handle),
                 },
-                Err(_) => Self { _stream: None, handle: None },
+                Err(_) => Self {
+                    _stream: None,
+                    handle: None,
+                },
             }
         }
         #[cfg(not(feature = "audio"))]
@@ -63,8 +66,8 @@ use std::time::Duration;
 
 #[cfg(feature = "audio")]
 use rodio::{
-    source::{SineWave, Source},
     OutputStreamHandle, Sink,
+    source::{SineWave, Source},
 };
 
 #[cfg(feature = "audio")]
@@ -97,17 +100,17 @@ fn play_synth(handle: &OutputStreamHandle, sound: Sound) {
         Sound::LevelComplete => {
             sink.append(tone!(523.25, 0.13, 0.35));
             sink.append(tone!(659.25, 0.13, 0.35));
-            sink.append(tone!(784.0,  0.13, 0.35));
+            sink.append(tone!(784.0, 0.13, 0.35));
             sink.append(tone!(1046.5, 0.40, 0.35));
         }
         Sound::Transition => {
             for &(f, d) in &[
                 (200.0f32, 0.08f32),
-                (400.0,    0.08),
-                (700.0,    0.08),
-                (1100.0,   0.08),
-                (1600.0,   0.08),
-                (2000.0,   0.20),
+                (400.0, 0.08),
+                (700.0, 0.08),
+                (1100.0, 0.08),
+                (1600.0, 0.08),
+                (2000.0, 0.20),
             ] {
                 sink.append(tone!(f, d, 0.28));
             }
@@ -115,10 +118,10 @@ fn play_synth(handle: &OutputStreamHandle, sound: Sound) {
         Sound::GameComplete => {
             sink.append(tone!(523.25, 0.11, 0.35));
             sink.append(tone!(659.25, 0.11, 0.35));
-            sink.append(tone!(784.0,  0.11, 0.35));
+            sink.append(tone!(784.0, 0.11, 0.35));
             sink.append(tone!(987.77, 0.11, 0.35));
             sink.append(tone!(1046.5, 0.45, 0.35));
-            sink.append(tone!(784.0,  0.11, 0.35));
+            sink.append(tone!(784.0, 0.11, 0.35));
             sink.append(tone!(1046.5, 0.70, 0.35));
         }
     }
@@ -168,9 +171,15 @@ impl Iterator for SynthSource {
 }
 
 impl rodio::source::Source for SynthSource {
-    fn current_frame_len(&self) -> Option<usize> { None }
-    fn channels(&self) -> u16 { 1 }
-    fn sample_rate(&self) -> u32 { self.sample_rate }
+    fn current_frame_len(&self) -> Option<usize> {
+        None
+    }
+    fn channels(&self) -> u16 {
+        1
+    }
+    fn sample_rate(&self) -> u32 {
+        self.sample_rate
+    }
     fn total_duration(&self) -> Option<Duration> {
         Some(Duration::from_secs_f32(
             self.total_samples as f32 / self.sample_rate as f32,

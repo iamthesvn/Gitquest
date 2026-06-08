@@ -64,9 +64,11 @@ pub fn draw_gitlings_menu(frame: &mut Frame, app: &App, selected: usize) {
         Style::default().fg(Color::DarkGray),
     )));
 
-    let p = Paragraph::new(lines)
-        .style(Style::default().bg(BG))
-        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(GRAY)));
+    let p = Paragraph::new(lines).style(Style::default().bg(BG)).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(GRAY)),
+    );
     frame.render_widget(p, area);
 }
 
@@ -83,18 +85,13 @@ pub struct GitlingsExerciseState {
     pub sandbox: Option<GitSandbox>,
 }
 
-
 impl GitlingsExerciseState {
     pub fn new() -> Self {
         Self::default()
     }
 }
 
-pub fn draw_gitlings_exercise(
-    frame: &mut Frame,
-    app: &App,
-    ex_idx: usize,
-) {
+pub fn draw_gitlings_exercise(frame: &mut Frame, app: &App, ex_idx: usize) {
     let area = frame.area();
     let exercises = &app.gitlings_exercises;
     let ex = match exercises.get(ex_idx) {
@@ -143,7 +140,11 @@ pub fn draw_gitlings_exercise(
 
     let desc = Paragraph::new(desc_lines)
         .style(Style::default().bg(BG))
-        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(GRAY)));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(GRAY)),
+        );
     frame.render_widget(desc, chunks[0]);
 
     // ── Middle: terminal output ──────────────────────────────────────────────
@@ -159,20 +160,29 @@ pub fn draw_gitlings_exercise(
     } else {
         out_lines.push(Line::from(Span::styled(
             "  Type your command and press Enter.",
-            Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::ITALIC),
         )));
     }
 
     let out = Paragraph::new(out_lines)
         .style(Style::default().bg(Color::Rgb(8, 8, 14)))
-        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(GRAY))
-            .title(Span::styled(" Output ", Style::default().fg(GRAY))));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(GRAY))
+                .title(Span::styled(" Output ", Style::default().fg(GRAY))),
+        );
     frame.render_widget(out, chunks[1]);
 
     // ── Bottom: input prompt ─────────────────────────────────────────────────
     let prompt_color = if state.completed { GREEN } else { WHITE };
     let input_line = Line::from(vec![
-        Span::styled("  $ ", Style::default().fg(GREEN).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "  $ ",
+            Style::default().fg(GREEN).add_modifier(Modifier::BOLD),
+        ),
         Span::styled(state.input.as_str(), Style::default().fg(prompt_color)),
         if state.completed {
             Span::styled("", Style::default())
@@ -183,7 +193,11 @@ pub fn draw_gitlings_exercise(
 
     let input_widget = Paragraph::new(input_line)
         .style(Style::default().bg(Color::Rgb(8, 8, 14)))
-        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(GRAY))
-            .title(Span::styled(" Terminal ", Style::default().fg(GRAY))));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(GRAY))
+                .title(Span::styled(" Terminal ", Style::default().fg(GRAY))),
+        );
     frame.render_widget(input_widget, chunks[2]);
 }

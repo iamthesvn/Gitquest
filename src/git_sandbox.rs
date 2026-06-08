@@ -1,10 +1,6 @@
 // git_sandbox.rs — Run real git commands in isolated temp repositories
 
-use std::{
-    fs,
-    path::PathBuf,
-    process::Command,
-};
+use std::{fs, path::PathBuf, process::Command};
 
 /// An isolated temporary Git repository for verifying player commands.
 pub struct GitSandbox {
@@ -50,9 +46,17 @@ impl GitSandbox {
     /// Run a shell command (non-git) in the sandbox.
     pub fn sh(&self, cmd: &str) -> (String, String, i32) {
         let output = if cfg!(target_os = "windows") {
-            Command::new("cmd").args(["/C", cmd]).current_dir(&self.path).env("HOME", &self.path).output()
+            Command::new("cmd")
+                .args(["/C", cmd])
+                .current_dir(&self.path)
+                .env("HOME", &self.path)
+                .output()
         } else {
-            Command::new("sh").args(["-c", cmd]).current_dir(&self.path).env("HOME", &self.path).output()
+            Command::new("sh")
+                .args(["-c", cmd])
+                .current_dir(&self.path)
+                .env("HOME", &self.path)
+                .output()
         };
 
         match output {
@@ -105,7 +109,11 @@ impl GitSandbox {
             return None;
         }
         let name = out.trim();
-        if name.is_empty() { None } else { Some(name.to_string()) }
+        if name.is_empty() {
+            None
+        } else {
+            Some(name.to_string())
+        }
     }
 
     /// Check if HEAD points to a commit with the given message (substring match).

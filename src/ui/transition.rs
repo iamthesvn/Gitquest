@@ -1,8 +1,8 @@
 use ratatui::{
+    Frame,
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::Paragraph,
-    Frame,
 };
 
 // The git diamond logo — rendered as a repeating tile.
@@ -73,7 +73,11 @@ pub fn draw_transition(frame: &mut Frame, next_vol: usize, anim_frame: usize, sh
     //  13-19 → hold
     //  20-29 → drain out
     let visible_count = if anim_frame <= 12 {
-        if anim_frame == 0 { 0 } else { (anim_frame * total_tiles) / 12 }
+        if anim_frame == 0 {
+            0
+        } else {
+            (anim_frame * total_tiles) / 12
+        }
     } else if anim_frame <= 19 {
         total_tiles
     } else {
@@ -88,14 +92,42 @@ pub fn draw_transition(frame: &mut Frame, next_vol: usize, anim_frame: usize, sh
     // Accent colour per next volume, modulated by shimmer
     let s = shimmer;
     let accent = match next_vol {
-        0 => Color::Rgb((240u8).saturating_add(s / 4), (80u8).saturating_add(s / 3), (50u8).saturating_add(s / 2)),
-        1 => Color::Rgb((60u8).saturating_add(s / 3), (210u8).saturating_add(s / 4), (80u8).saturating_add(s / 2)),
-        2 => Color::Rgb((80u8).saturating_add(s / 3), (150u8).saturating_add(s / 3), (255u8).saturating_sub(s / 4)),
-        3 => Color::Rgb((240u8).saturating_add(s / 4), (200u8).saturating_add(s / 4), (40u8).saturating_add(s / 2)),
-        4 => Color::Rgb((200u8).saturating_add(s / 4), (80u8).saturating_add(s / 3), (255u8).saturating_sub(s / 4)),
-        _ => Color::Rgb((240u8).saturating_add(s / 4), (80u8).saturating_add(s / 3), (50u8).saturating_add(s / 2)),
+        0 => Color::Rgb(
+            (240u8).saturating_add(s / 4),
+            (80u8).saturating_add(s / 3),
+            (50u8).saturating_add(s / 2),
+        ),
+        1 => Color::Rgb(
+            (60u8).saturating_add(s / 3),
+            (210u8).saturating_add(s / 4),
+            (80u8).saturating_add(s / 2),
+        ),
+        2 => Color::Rgb(
+            (80u8).saturating_add(s / 3),
+            (150u8).saturating_add(s / 3),
+            (255u8).saturating_sub(s / 4),
+        ),
+        3 => Color::Rgb(
+            (240u8).saturating_add(s / 4),
+            (200u8).saturating_add(s / 4),
+            (40u8).saturating_add(s / 2),
+        ),
+        4 => Color::Rgb(
+            (200u8).saturating_add(s / 4),
+            (80u8).saturating_add(s / 3),
+            (255u8).saturating_sub(s / 4),
+        ),
+        _ => Color::Rgb(
+            (240u8).saturating_add(s / 4),
+            (80u8).saturating_add(s / 3),
+            (50u8).saturating_add(s / 2),
+        ),
     };
-    let border_color = Color::Rgb((240u8).saturating_add(s / 4), (80u8).saturating_add(s / 3), (50u8).saturating_add(s / 2)); // git orange for structural chars
+    let border_color = Color::Rgb(
+        (240u8).saturating_add(s / 4),
+        (80u8).saturating_add(s / 3),
+        (50u8).saturating_add(s / 2),
+    ); // git orange for structural chars
 
     let mut lines: Vec<Line> = Vec::with_capacity(height);
 
@@ -127,9 +159,12 @@ pub fn draw_transition(frame: &mut Frame, next_vol: usize, anim_frame: usize, sh
 
             let style = if visible.contains(&(tile_row, tile_col)) {
                 // "GIT" letters → accent; structural box chars → git orange; spaces → dim
-                let all_structural = chunk
-                    .chars()
-                    .all(|c| matches!(c, '╔'|'╗'|'╚'|'╝'|'╦'|'╩'|'╣'|'╠'|'═'|'║'|' '));
+                let all_structural = chunk.chars().all(|c| {
+                    matches!(
+                        c,
+                        '╔' | '╗' | '╚' | '╝' | '╦' | '╩' | '╣' | '╠' | '═' | '║' | ' '
+                    )
+                });
                 let has_letter = chunk.chars().any(|c| c.is_ascii_alphabetic());
 
                 let color = if has_letter {

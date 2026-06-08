@@ -1,4 +1,4 @@
 pub mod lessons;
 pub mod renderer;
 
-pub use lessons::{all_lessons, Lesson};
+pub use lessons::{Lesson, all_lessons};

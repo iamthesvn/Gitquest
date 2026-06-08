@@ -37,7 +37,9 @@ fn exercise_config() -> Exercise {
         name: "02_git_config",
         description: "Set the global git user name to 'Alex Chen'.",
         hint: "git config --global user.name \"Alex Chen\"",
-        setup: |sb| { let _ = sb.git(&["init"]); },
+        setup: |sb| {
+            let _ = sb.git(&["init"]);
+        },
         verify: |sb| sb.stdout(&["config", "user.name"]).contains("Alex Chen"),
     }
 }
@@ -100,7 +102,11 @@ mod tests {
         let output = if code != 0 {
             if err.is_empty() { out } else { err }
         } else {
-            if out.is_empty() { "(no output)".to_string() } else { out }
+            if out.is_empty() {
+                "(no output)".to_string()
+            } else {
+                out
+            }
         };
         let pass = code == 0 && (ex.verify)(&sb);
         (pass, output)
