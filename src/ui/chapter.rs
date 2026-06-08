@@ -64,6 +64,7 @@ const HINT_BG: Color = Color::Rgb(15, 15, 30);
 /// * Advance `hint_level` (up to 3) when `H` is pressed.
 use crate::git_sandbox::GitSandbox;
 
+#[derive(Default)]
 pub struct ChapterState {
     /// The text the player has typed so far.
     pub input: String,
@@ -86,21 +87,6 @@ pub struct ChapterState {
     pub sandbox_setup: Option<fn(&mut GitSandbox)>,
 }
 
-impl Default for ChapterState {
-    fn default() -> Self {
-        Self {
-            input: String::new(),
-            flash_wrong: 0,
-            flash_correct: 0,
-            show_hint: false,
-            hint_level: 0,
-            completed: false,
-            attempts: 0,
-            sandbox: None,
-            sandbox_setup: None,
-        }
-    }
-}
 
 impl ChapterState {
     pub fn new() -> Self {
@@ -109,12 +95,11 @@ impl ChapterState {
 
     /// Reset the sandbox by creating a fresh temp repo and re-running setup.
     pub fn reset_sandbox(&mut self) {
-        if let Some(setup) = self.sandbox_setup {
-            if let Ok(mut sb) = GitSandbox::new() {
+        if let Some(setup) = self.sandbox_setup
+            && let Ok(mut sb) = GitSandbox::new() {
                 setup(&mut sb);
                 self.sandbox = Some(sb);
             }
-        }
     }
 }
 
@@ -198,11 +183,10 @@ pub fn draw_chapter(
     draw_mid(frame, chapter, state, rows[1]);
     draw_terminal(frame, chapter, state, rows[2], anim);
 
-    if show_hint_anim {
-        if let Some(hint_area) = rows.get(3) {
+    if show_hint_anim
+        && let Some(hint_area) = rows.get(3) {
             draw_hints(frame, chapter, state, *hint_area, anim);
         }
-    }
 }
 
 // ── HUD bar ───────────────────────────────────────────────────────────────────

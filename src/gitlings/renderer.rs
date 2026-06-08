@@ -74,6 +74,7 @@ pub fn draw_gitlings_menu(frame: &mut Frame, app: &App, selected: usize) {
 
 use crate::git_sandbox::GitSandbox;
 
+#[derive(Default)]
 pub struct GitlingsExerciseState {
     pub input: String,
     pub completed: bool,
@@ -82,17 +83,6 @@ pub struct GitlingsExerciseState {
     pub sandbox: Option<GitSandbox>,
 }
 
-impl Default for GitlingsExerciseState {
-    fn default() -> Self {
-        Self {
-            input: String::new(),
-            completed: false,
-            output: String::new(),
-            output_is_error: false,
-            sandbox: None,
-        }
-    }
-}
 
 impl GitlingsExerciseState {
     pub fn new() -> Self {

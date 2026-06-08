@@ -43,9 +43,9 @@ fn save_path() -> Option<std::path::PathBuf> {
 
 impl SaveData {
     pub fn load() -> Self {
-        if let Some(path) = save_path() {
-            if let Ok(data) = std::fs::read_to_string(&path) {
-                if let Ok(json) = serde_json::from_str::<serde_json::Value>(&data) {
+        if let Some(path) = save_path()
+            && let Ok(data) = std::fs::read_to_string(&path)
+                && let Ok(json) = serde_json::from_str::<serde_json::Value>(&data) {
                     let vol_idx = json["vol_idx"].as_u64().unwrap_or(0) as usize;
                     let ch_idx = json["ch_idx"].as_u64().unwrap_or(0) as usize;
                     let total_xp = json["total_xp"].as_u64().unwrap_or(0) as u32;
@@ -67,8 +67,6 @@ impl SaveData {
                         .unwrap_or_default();
                     return Self { vol_idx, ch_idx, total_xp, xp_per_chapter, gitlings_progress };
                 }
-            }
-        }
         Self { vol_idx: 0, ch_idx: 0, total_xp: 0, xp_per_chapter: vec![], gitlings_progress: vec![] }
     }
 
@@ -298,7 +296,7 @@ impl App {
 
         // Music tick every 5 game ticks (~500 ms)
         self.music_tick_counter = self.music_tick_counter.wrapping_add(1);
-        if self.music_tick_counter % 5 == 0 {
+        if self.music_tick_counter.is_multiple_of(5) {
             self.music.tick();
         }
     }
@@ -517,12 +515,11 @@ impl App {
             self.chapter_state = ChapterState::new();
 
             // Initialise sandbox if this chapter uses one
-            if let Some(ch) = self.current_chapter(vol_idx, ch_idx) {
-                if let Some(setup) = ch.sandbox_setup {
+            if let Some(ch) = self.current_chapter(vol_idx, ch_idx)
+                && let Some(setup) = ch.sandbox_setup {
                     self.chapter_state.sandbox_setup = Some(setup);
                     self.chapter_state.reset_sandbox();
                 }
-            }
 
             self.state = AppState::Playing { vol_idx, ch_idx };
         }
@@ -595,8 +592,8 @@ impl App {
     /// otherwise falls back to string matching against accepted_answers.
     fn verify_command(&mut self, chapter: &Chapter, input: &str) -> bool {
         // Sandbox path
-        if let Some(ref sb) = self.chapter_state.sandbox {
-            if let Some(verify) = chapter.sandbox_verify {
+        if let Some(ref sb) = self.chapter_state.sandbox
+            && let Some(verify) = chapter.sandbox_verify {
                 // Safety: only allow git commands in the sandbox
                 if !input.starts_with("git ") {
                     return false;
@@ -607,7 +604,6 @@ impl App {
                 }
                 return verify(sb);
             }
-        }
 
         // Fallback: string matching
         chapter.accepted_answers.iter().any(|a| {
@@ -712,12 +708,11 @@ impl App {
             KeyCode::Enter | KeyCode::Char(' ') => {
                 self.sound.play(Sound::Correct);
                 self.gitlings_state = GitlingsExerciseState::new();
-                if let Some(ex) = self.gitlings_exercises.get(selected) {
-                    if let Ok(mut sb) = GitSandbox::new() {
+                if let Some(ex) = self.gitlings_exercises.get(selected)
+                    && let Ok(mut sb) = GitSandbox::new() {
                         (ex.setup)(&mut sb);
                         self.gitlings_state.sandbox = Some(sb);
                     }
-                }
                 self.state = AppState::GitlingsExercise { ex_idx: selected };
             }
             KeyCode::Esc | KeyCode::Char('q') => {
@@ -834,18 +829,17 @@ where
         // Render
         let size = terminal.size()?;
         if size.width < 80 || size.height < 24 {
-            terminal.draw(|f| ui::draw_resize_warning(f))?;
+            terminal.draw(ui::draw_resize_warning)?;
         } else {
             terminal.draw(|f| ui::draw(f, &app))?;
         }
 
         // Poll events
         let timeout = TICK_RATE.checked_sub(last_tick.elapsed()).unwrap_or(Duration::ZERO);
-        if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
+        if event::poll(timeout)?
+            && let Event::Key(key) = event::read()? {
                 app.handle_key(key);
             }
-        }
 
         // Tick
         if last_tick.elapsed() >= TICK_RATE {

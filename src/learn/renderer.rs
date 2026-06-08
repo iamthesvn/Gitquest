@@ -136,15 +136,11 @@ pub fn draw_learn_menu(frame: &mut Frame, app: &App, selected: usize) {
 // ── Learn Lesson ──────────────────────────────────────────────────────────────
 
 #[derive(Clone)]
+#[derive(Default)]
 pub struct LearnLessonState {
     pub showing_result: bool,
 }
 
-impl Default for LearnLessonState {
-    fn default() -> Self {
-        Self { showing_result: false }
-    }
-}
 
 impl LearnLessonState {
     pub fn new() -> Self {

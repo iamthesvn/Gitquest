@@ -204,7 +204,7 @@ fn render_boot_sequence() -> Vec<f32> {
         // Melodic arpeggio — bell tones
         for &(freq, start_beat) in scale {
             let note_t = beat_abs - start_beat;
-            if note_t >= 0.0 && note_t < 1.0 {
+            if (0.0..1.0).contains(&note_t) {
                 s += bell(freq, note_t * beat, beat, 0.28);
             }
         }
@@ -279,7 +279,7 @@ fn render_void_wanderer() -> Vec<f32> {
         // Bell melody
         for &(freq, start_beat) in melody {
             let note_t = beat_abs - start_beat;
-            if note_t >= 0.0 && note_t < 1.5 {
+            if (0.0..1.5).contains(&note_t) {
                 s += bell(freq, note_t * beat, 1.5 * beat, 0.26);
             }
         }
@@ -375,7 +375,7 @@ fn render_mission_critical() -> Vec<f32> {
         // Fast half-beat bell arpeggio
         for &(freq, start_beat) in melody {
             let note_t = beat_abs - start_beat;
-            if note_t >= 0.0 && note_t < 0.5 {
+            if (0.0..0.5).contains(&note_t) {
                 s += bell(freq, note_t * beat, 0.5 * beat, 0.30);
             }
         }

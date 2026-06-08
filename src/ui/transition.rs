@@ -50,8 +50,8 @@ pub fn draw_transition(frame: &mut Frame, next_vol: usize, anim_frame: usize, sh
     // All rows should have the same char-width; use the longest as tile width
     let tile_w = logo_chars.iter().map(|r| r.len()).max().unwrap_or(8);
 
-    let cols = (width + tile_w - 1) / tile_w;
-    let rows = (height + TILE_H - 1) / TILE_H;
+    let cols = width.div_ceil(tile_w);
+    let rows = height.div_ceil(TILE_H);
     let total_tiles = cols * rows;
 
     if total_tiles == 0 {
@@ -86,16 +86,16 @@ pub fn draw_transition(frame: &mut Frame, next_vol: usize, anim_frame: usize, sh
         order.iter().take(visible_count).copied().collect();
 
     // Accent colour per next volume, modulated by shimmer
-    let s = shimmer as u8;
+    let s = shimmer;
     let accent = match next_vol {
-        0 => Color::Rgb((240u8).saturating_add(s / 4).min(255), (80u8).saturating_add(s / 3).min(255), (50u8).saturating_add(s / 2).min(255)),
-        1 => Color::Rgb((60u8).saturating_add(s / 3).min(255), (210u8).saturating_add(s / 4).min(255), (80u8).saturating_add(s / 2).min(255)),
-        2 => Color::Rgb((80u8).saturating_add(s / 3).min(255), (150u8).saturating_add(s / 3).min(255), (255u8).saturating_sub(s / 4).min(255)),
-        3 => Color::Rgb((240u8).saturating_add(s / 4).min(255), (200u8).saturating_add(s / 4).min(255), (40u8).saturating_add(s / 2).min(255)),
-        4 => Color::Rgb((200u8).saturating_add(s / 4).min(255), (80u8).saturating_add(s / 3).min(255), (255u8).saturating_sub(s / 4).min(255)),
-        _ => Color::Rgb((240u8).saturating_add(s / 4).min(255), (80u8).saturating_add(s / 3).min(255), (50u8).saturating_add(s / 2).min(255)),
+        0 => Color::Rgb((240u8).saturating_add(s / 4), (80u8).saturating_add(s / 3), (50u8).saturating_add(s / 2)),
+        1 => Color::Rgb((60u8).saturating_add(s / 3), (210u8).saturating_add(s / 4), (80u8).saturating_add(s / 2)),
+        2 => Color::Rgb((80u8).saturating_add(s / 3), (150u8).saturating_add(s / 3), (255u8).saturating_sub(s / 4)),
+        3 => Color::Rgb((240u8).saturating_add(s / 4), (200u8).saturating_add(s / 4), (40u8).saturating_add(s / 2)),
+        4 => Color::Rgb((200u8).saturating_add(s / 4), (80u8).saturating_add(s / 3), (255u8).saturating_sub(s / 4)),
+        _ => Color::Rgb((240u8).saturating_add(s / 4), (80u8).saturating_add(s / 3), (50u8).saturating_add(s / 2)),
     };
-    let border_color = Color::Rgb((240u8).saturating_add(s / 4).min(255), (80u8).saturating_add(s / 3).min(255), (50u8).saturating_add(s / 2).min(255)); // git orange for structural chars
+    let border_color = Color::Rgb((240u8).saturating_add(s / 4), (80u8).saturating_add(s / 3), (50u8).saturating_add(s / 2)); // git orange for structural chars
 
     let mut lines: Vec<Line> = Vec::with_capacity(height);
 
