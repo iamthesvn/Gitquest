@@ -211,6 +211,12 @@ Minimum 80×24. GitQuest shows a resize warning if your terminal is too small.
 
 ---
 
+## Acknowledgements
+
+This project was built with AI assistance. All code is reviewed, tested, and maintained by human oversight.
+
+---
+
 ## License
 
 MIT
